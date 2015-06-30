@@ -2538,8 +2538,11 @@ void NNet::l_trainnet(int numlatent, int mode)
       for (int i = 0; i < epoch; i++)
 	{
 	  cout<<((double)i/(double)epoch)*100<<"%\n";
-	  testvoids(0);
-	  cout<<endl;
+	  if (trainmode == 1)
+	    {
+	      testvoids(0);
+	      cout<<endl;
+	    }
 	  int step = 0;
 	  for (int lr = 0; lr < numfiles; lr++)
 	    {
