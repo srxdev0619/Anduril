@@ -1,4 +1,5 @@
-###Anduril is a neural network library for python. It is written on top of NNet 
+###Anduril
+Anduril is a neural network library for python. It is written on top of NNet 
 A list of methods available to the Anduril object and their brief descriptions is given below:
 
 
