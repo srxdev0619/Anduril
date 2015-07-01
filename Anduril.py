@@ -73,6 +73,23 @@ class Anduril():
         self.Net.snets()
         return
 
+    def ls_init(self,nconfig,classreg = 0,gradd = 0, costfunc = 0, epoch = 1):
+        if (type(numfiles) == str) and (type(classreg) == int) and (type(gradd) == int) and (type(costfunc) == int) and (type(epoch) == int):
+            self.Net.ls_init(nconfig,classreg,gradd,costfunc,epoch)
+            return
+        else:
+            print "Invalid input!"
+            return
+    
+
+    def ls_load(self,outputfiles, Qmatrix = " ", mode = 0, input_file = " ", sep1 = ","):
+        if (type(outputfiles) == str) and (type(Qmatrix) == str) and (type(mode) == int) and (type(input_file) == str) and (type(sep1) == str):
+            self.Net.ls_load(Qmatrix,mode,input_file,sep1)
+            return
+        else:
+            print "Invalid input!"
+            return
+
     def l_load(self,Qmatrix = " ", mode = 0, input_file = " ", sep1 = ","):
         if (type(Qmatrix) == str) and (type(mode) == int) and (type(input_file) == str) and (type(sep1) == str):
             self.Net.l_load(Qmatrix,mode,input_file,sep1)
@@ -83,7 +100,7 @@ class Anduril():
 
     def l_init(self,numfiles,classreg = 0,gradd = 0, costfunc = 0, epoch = 1):
         if (type(numfiles) == str) and (type(classreg) == int) and (type(gradd) == int) and (type(costfunc) == int) and (type(epoch) == int):
-            self.Net.l_load(numfiles,classreg,1,gradd,costfunc,epoch)
+            self.Net.l_init(numfiles,classreg,1,gradd,costfunc,epoch)
             return
         else:
             print "Invalid input!"

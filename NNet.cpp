@@ -1724,6 +1724,401 @@ void NNet::test_file(string filename,int verbose,int ffmode, string sep1, string
 
 
 
+void NNet::ls_init(string nconfig, int iclassreg, int igradd, int icostfunc, int iepoch)
+{
+  numfiles = 0;
+  if (!l_numlayers.empty())
+    {
+      l_numlayers.clear();
+    }
+  if(!l_numhids.empty())
+    {
+      l_numhids.clear();
+    }
+  vector<string> nconfigs;
+  int nlent = nconfig.length();
+  for (int i = 0; i < nlent; i++)
+    {
+      string cmm = ",";
+      string septr = "-";
+      string num = "";
+      if ((nconfig[i] != cmm[0]) && (nconfig.at(i) != septr[0]) && (isdigit(nconfig.at(i)) == 0))
+	{
+	  cout<<"Invalid configuration!"<<endl;
+	  abort();
+	}
+      else if (nconfig[i] == cmm[0])
+	{
+	  nconfigs.push_back(num);
+	  num = "";
+	  numfiles++;
+	}
+      else if (i == (nlent -1))
+	{
+	  nconfigs.push_back(num);
+	  num = "";
+	  numfiles++;
+	}
+      else
+	{
+	  num = num + nconfig[i];
+	}
+    }
+  for(int j = 0; j < numfiles; j++)
+    {
+      string sconfig = nconfigs[j];
+      vector<int> itn;
+      l_numlayers.push_back(itn);
+      int lent = sconfig.length();
+      string num = "";
+      //parses sconfig
+      for (int i = 0; i < lent; i++)
+	{
+	  if ((sconfig.at(i) != '-') && (isdigit(sconfig.at(i)) == 0))
+	    {
+	      cout<<"Invalid input!\n";
+	      return; 
+	    }
+	  else if ((sconfig.at(i) != '-') && (isdigit(sconfig.at(i)) != 0) && (i != (lent -1)))
+	    {
+	      num = num + sconfig.at(i);
+	    }
+	  else if (sconfig.at(i) == '-')
+	    {
+	      //config = (int *)realloc(config,(count + 1)*sizeof(int));
+	      //config[count] = stoi(num,NULL);
+	      //count++;
+	      l_numlayers[j].push_back(stoi(num,NULL));
+	      num = "";
+	    }
+	  else if ((i == lent - 1) && (sconfig.at(i) != '-'))
+	    {
+	      num = num + sconfig.at(i);
+	      //config = (int *)realloc(config,(count + 1)*sizeof(int));
+	      //config[count] = stoi(num,NULL);
+	      l_numlayers[j].push_back(stoi(num,NULL));
+	    }
+	}
+      l_numhids.push_back(l_numlayers[j].size());
+    }
+  //sets variables
+  classreg = iclassreg;
+  gradd = igradd;
+  costfunc = icostfunc;
+  epoch = iepoch;
+  //checks network confgiuration
+  if ((classreg > 1) || (gradd > 1) || (costfunc > 1) || (classreg < 0) || (gradd < 0))
+    {
+      cout<<"Invalid network configuration!\n";
+      return;
+    }
+  if (epoch <= 0)
+    {
+      cout<<"Invalid configuration\nPlease choose the number of epochs to be trained";
+      return;
+    }
+  for (int j = 0; j < numfiles; j++)
+    {
+      vector<int> tr;
+      l_funclayer.push_back(tr);
+      int count = l_numhids[j];
+      for (int i = 0; i < count + 1; i++)
+	{
+	  if (classreg == 0)
+	    {
+	      l_funclayer[j].push_back(0);
+	    }
+	  else if (classreg == 1)
+	    {
+	      l_funclayer[j].push_back(3);
+	    }
+	}
+    }
+  //numhid = count;
+  vector<mat> tr;
+  l_dels.push_back(tr);
+  l_tdels.push_back(tr);
+  for (int i = 0; i < numfiles; i++)
+    {
+      l_activ.push_back(tr);
+      l_sums.push_back(tr);
+      l_grads.push_back(tr);
+      l_dels.push_back(tr);
+      l_tgrads.push_back(tr);
+      l_tdels.push_back(tr);
+      l_checkgrads.push_back(tr);
+      l_checkdels.push_back(tr);
+    }
+  checkinit = 0;
+  return;
+}
+
+
+
+//A
+void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_file, string sep1)
+{
+  if (checkinit == -1)
+    {
+      cout<<"Please initilize the Neural Network!\n";
+      return;
+    }
+  l_numx = 0;
+  if (!filenames.empty())
+    {
+      filenames.clear();
+    }
+  int nlent = outputfiles.length();
+  int fcount = 0;
+  for (int i = 0; i < nlent; i++)
+    {
+      string num = "";
+      string cmma = ",";
+      if(outputfiles[i] == cmma[0])
+	{
+	  filenames.push_back(num);
+	  num = "";
+	  fcount++;
+	}
+      else if (i == (nlent - 1))
+	{
+	  filenames.push_back(num);
+	  num = "";
+	  fcount++;
+	}
+      else
+	{
+	  num = num + outputfiles[i];
+	}
+    }
+  if (fcount != numfiles)
+    {
+      cout<<"Incorrect number of files given!"<<endl;
+      abort();
+    }
+  for (int i = 0; i < numfiles; i++)
+    {
+      vector<mat> t1;
+      l_params.push_back(t1);
+      l_bias.push_back(t1);
+      l_yvals.push_back(t1);
+    }
+  string decp = ".";
+  string minussb = "-";
+  string empt = " ";
+  //int templines = 0;
+  int numlines = 0;
+  for (int j = 0; j < numfiles; j++)
+    {
+      ifstream ldata(filenames.at(j));
+      if (!ldata.is_open())
+	{
+	  cout<<"Error opening file!\n";
+	  abort();
+	  return;
+	}
+      string temp;
+      //templines = numlines;
+      numlines = 0;
+      //parse file input
+      int tempcount = 0;
+      int county = 0;
+      while (getline(ldata,temp))
+	{
+	  int lent = temp.length();
+	  string num = "";
+	  if((tempcount != county) && (tempcount != 0))
+	    {
+	      cout<<temp;
+	      cout<<"Change in length of output!\n";
+	      abort();
+	      return;
+	    }
+	  tempcount = county;
+	  county = 0;
+	  vector<double> yvals;
+	  for(int i = 0; i < lent; i++)
+	    {
+	      if  ((isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)) && (temp.at(i) != sep1.at(0)))
+		{
+		  //cout<<temp.at(i)<<endl;
+		  cout << "Invalid file format!\n";
+		  return;
+		}
+	      if (((i < (lent-1))) && ((temp.at(i) == decp.at(0)) || (temp.at(i) == minussb.at(0)) || (isdigit(temp.at(i)) != 0)))
+		{
+		  num = num + temp.at(i);
+		}
+	      else if (temp.at(i) == sep1.at(0))
+	       {
+		 yvals.push_back(stod(num,NULL));
+		 num = "";
+		 county++;
+	       }
+	      else if ((i == (lent - 1)) && (isdigit(temp.at(i)) != 0))
+		{
+		  num = num + temp.at(i);
+		  yvals.push_back(stod(num,NULL));
+		  num = "";
+		  county++;
+		}
+	    }
+	  mat mtempy(yvals);
+	  l_yvals[j].push_back(mtempy);
+	  numlines++;
+	}
+      l_numlayers[j].push_back(county);
+      ldata.close();
+    }
+  file_nlines = numlines;
+  //cout<<numlines<<endl;
+  
+  //LOADING INPUT FILE
+  if (input_file.at(0) != empt.at(0))
+    {
+      //LOADING QMATRIX
+      int qnumlines = 0;
+      qmat = 1;
+      cout<<"QMAT: "<<qmat<<endl;
+      ifstream qdata(Qmatrix);
+      if (!qdata.is_open())
+	{
+	  cout<<"Error opening file!\n";
+	  abort();
+	  return;
+	}
+      string temp;
+      int qtempcount = 0;
+      int qcounty = 0;
+      string qsep = ",";
+      while (getline(qdata,temp))
+	{
+	  int lent = temp.length();
+	  string num = "";
+	  if((qtempcount != qcounty) && (qtempcount != 0))
+	    {
+	      cout<<temp;
+	      cout<<"Change in length of output!\n";
+	      abort();
+	      return;
+	    }
+	  qtempcount = qcounty;
+	  qcounty = 0;
+	  vector<int> qvals;
+	  for(int i = 0; i < lent; i++)
+	    {
+	      if  ((isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)) && (temp.at(i) != qsep.at(0)))
+		{
+	      cout<<temp.at(i)<<endl;
+	      cout << "Invalid file format!\n";
+	      return;
+		}
+	      if (((i < (lent-1))) && ((temp.at(i) == decp.at(0)) || (temp.at(i) == minussb.at(0)) || (isdigit(temp.at(i)) != 0)))
+		{
+		  num = num + temp.at(i);
+		}
+	      else if (temp.at(i) == qsep.at(0))
+		{
+		  qvals.push_back(stoi(num,NULL));
+		  num = "";
+		  qcounty++;
+		}
+	      else if ((i == (lent - 1)) && (isdigit(temp.at(i)) != 0))
+		{
+		  num = num + temp.at(i);
+		  qvals.push_back(stoi(num,NULL));
+		  num = "";
+		  qcounty++;
+		}
+	    }
+	  Q_mat.push_back(qvals);
+	  qnumlines++;
+	}
+      qdata.close();
+      ifstream ldata(input_file);
+      if (!ldata.is_open())
+	{
+	  cout<<"Error opening file!\n";
+	  return;
+	}
+      //string temp;
+      int xnumlines = 0;
+      int tempcx = 0;
+      int countx = 0;
+      //parse file input
+      while (getline(ldata,temp))
+	{
+	  int lent = temp.length();
+	  string num = "";
+	  if ((tempcx != countx) && (tempcx != 0))
+	    {
+	      cout<<"Change in length of input!"<<endl;
+	      abort();
+	      return;
+	    }
+	  tempcx = countx;
+	  countx = 0;
+	  vector<double> xvals;
+	  for(int i = 0; i < lent; i++)
+	    {
+	      //cout<<sep1.at(0);
+	      if  ((isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)) && (temp.at(i) != sep1.at(0)))
+		{
+		  //cout<<temp.at(i)<<endl;
+		  cout << "Invalid file format!\n";
+		  abort();
+		  return;
+		}
+	      if (((i < (lent-1))) && ((temp.at(i) == decp.at(0)) || (temp.at(i) == minussb.at(0)) || (isdigit(temp.at(i)) != 0)))
+		{
+		  num = num + temp.at(i);
+		}
+	      else if (temp.at(i) == sep1.at(0))
+		{
+		  xvals.push_back(stod(num,NULL));
+		  num = "";
+		  countx++;
+		}
+	      else if ((i == (lent - 1)) && (isdigit(temp.at(i)) != 0))
+		{
+		  num = num + temp.at(i);
+		  xvals.push_back(stod(num,NULL));
+		  num = "";
+		  countx++;
+		}
+	    }
+	  //cout<<xvals.size();
+	  mat mtempx(xvals);
+	  l_xvals.push_back(mtempx);
+	  xnumlines++;
+	}
+      if (xnumlines != qnumlines)
+	{
+	  cout<<"Missing Q-matrix entries for certain data points!"<<endl;
+	  abort();
+	  return;
+	}
+      l_numx = countx;
+    }
+  if (lmode == 0)
+    {
+      l_test = numlines/5;
+      l_validate = tests;
+      l_train = numlines - tests - validate;
+    }
+  else if(lmode == 1)
+    {
+      l_train = numlines;
+    }
+  else
+    {
+      cout<<"Loading configuration can only be 1 or 0"<<endl;
+    }
+  return;
+}
+
+
+
 //The below method initilizes the neural network
 void NNet::l_init(int num_files, int iclassreg, int inumcores, int igradd, int icostfunc, int iepoch)
 {
