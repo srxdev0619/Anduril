@@ -5,7 +5,7 @@ A list of methods available to the Anduril object and their brief descriptions i
 
 ####Standard Methods:
 ```python
-Anduril(sconfig, classreg = 0, numcores = 1, gradd = 0, costfunc, epoch = -1)
+Anduril(sconfig, classreg = 0, numcores = 1, gradd = 0, costfunc, epoch = 1)
 ```
 
 This method is used to initilize the neural network. The architecture is specified by the string `sconfig` with `-` separated numbers. Anduril automatically detects the number of input and output layers depending on the input file, thus only the architecture of the hidden layers needs to be specified for sconfig. The user is required to specify what would be the purpose of the neural network, regression or classification. The variable `classreg` should be set to 1 for regression and 0 for classification. The user can specify the number of cores they have at thier disposal, if the number of cores is greater than 1 Anduril would use that to its advantage to perform parallel calculations. The user can also decide what gradient descent algorithim they prefer to use, set `gradd` to 0 for batch gradient descent and 1 for stochastic gradient descent. For classification the user can specify NNet to use the cross entropy cost function which can be done by specifying `costfunc` to be 1 (not available yet). If the user has selected stochastic gradient descent they can specify the number of epoch to perform using the `epoch` variable
