@@ -31,7 +31,6 @@ NNet::NNet()
   qmat = 0;
   trained = 0;
   l_trained = 0;
-  //paracheck.push_back(0);
 }
 
 
@@ -195,10 +194,8 @@ void NNet::func_arch(string flayer)
 	      return;
 	    }
 	  funclayer[i] = stoi(num);
-	  //cout<<funclayer[i];
 	}
     }
-  //cout<<endl;
   return;
 }
 
@@ -326,12 +323,8 @@ void NNet::load(string filename,int imode, string sep1, string sep2)
       mat a = zeros<mat>(rows,cols);
       mat b = zeros<mat>(rows,1);
       tgrads.push_back(a);
-      //checkgrads.push_back(a);
-      //checkgrads.fill(0.9);
       bias.push_back(randn<mat>(rows,1));
       tdels.push_back(b);
-      //checkdels.push_back(b);
-      //checkdels.fill(0.9);
     }
   ldata.close();
   return;
@@ -418,14 +411,11 @@ void NNet::feed_forward(mat x,int gpos)
 	    }
 	  else
 	    {
-	      //cout<<activ.size();
 	      activ[idx].at(count)(j,0) = tanh_r(activ[idx].at(count)(j,0));
-	      //cout<<activ.at(count)(0,0)<<" After\n";
 	    }
 	}
       count++;
     }
-  //cout<<activ[idx].at(numhid+1);
   return;
 }
 
@@ -489,6 +479,7 @@ void NNet::backprop(mat x, mat y, int gpos)
       mat temp;
       temp = (params[numhid - i].t())*(dels[idx][i]);
       mat derv = sums[idx][numhid - i];
+      //Calculates the derivatives at each layer according to the corresponding activation function
       if (funclayer[numhid - count] == 0)
 	{ 
 	  derv = activ[idx][numhid- i] - (activ[idx][numhid - i]%activ[idx][numhid - i]);
@@ -548,19 +539,16 @@ void NNet::train_net(double lrate, int mode, int verbose)
   int ecount = 0;
   if (gradd == 0)
     {
-      //int stop = 0;
       double beta = 0.2;
       for (int k = 0; k < epoch; k++)
 	{
 	  cout<<(double)k*100/(double)epoch<<"%\n";
 	  for (int i = 0; i < train; i++)
 	    {
-	      //cout<<train;
 	      for (int l = 0; l < numhid + 1; l++)
 		{
 		  params.at(l) = params.at(l) + beta*velocity.at(l);
 		}
-	      //TODO:IMPLEMENT PARALLELIZATION ASAP!
 	      backprop(xdata[i],ydata[i],-1);
 	      for (int q = 0; q < numcores; q++)
 		{
@@ -577,9 +565,7 @@ void NNet::train_net(double lrate, int mode, int verbose)
 	    }
 	  for (int l = 0; l < numhid + 1; l++)
 	    {
-	      //cout<<velocity.at(i)<<"\n";
 	      velocity.at(l) = beta*velocity.at(l) - (lrate/(double)train)*tgrads.at(l);
-	      //params[i] = params[i] - (lrate/(double)train)*tgrads[i] - 0.00001*params[i];
 	      params.at(l) = params.at(l) + velocity.at(l);
 	      bias[l] = bias[l] - (lrate/(double)train)*tdels[l];
 	    }
@@ -636,7 +622,6 @@ void NNet::train_net(double lrate, int mode, int verbose)
 		    }
 		  for (int t = 0; t < ncore; t++)
 		    {
-		      //backprop(xdata.at(idxs.at(k+t)),ydata.at(idxs.at(k+t)),-1);
 		      if (numcores > 1)
 			{ bpthreads.push_back(std::thread(&NNet::parallel_bp,this,idxs.at(k+t),t));
 			}
@@ -713,9 +698,6 @@ void NNet::train_net(double lrate, int mode, int verbose)
 		}
 	      if (temp_rmse > ttemp_rmse)
 		{
-		  //double kappa = 0.001;
-		  //cout<<"RMSE reversed!\n";
-		  //cout<<lrate<<endl;
 		  if (ecount <= 0)
 		    {
 		      double kappa = 0.001;
@@ -742,13 +724,11 @@ void NNet::train_net(double lrate, int mode, int verbose)
 		  else
 		    {
 		      ecount = ecount - 1;
-		    }
-		  //cout<<lrate<<endl;
+		    } 
 		}
 	      if (temp_rmse < min_rmse)
 		{
 		  min_rmse = temp_rmse;
-		  //cout<<"Minima!\n";
 		  if (!best_params.empty())
 		    {
 		      best_params.clear();
@@ -797,14 +777,11 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
   int ecount = 0;
   if (gradd == 0)
     {
-      //int stop = 0;
       for (int k = 0; k < epoch; k++)
 	{
 	  cout<<(double)k*100/(double)epoch<<"%\n";
 	  for (int i = 0; i < train; i++)
 	    {
-	      //cout<<train;
-	      //TODO:IMPLEMENT PARALLELIZATION ASAP!
 	      for (int t = 0; t < numcores; t++)
 		{
 		  bpthreads.push_back(std::thread(&NNet::parallel_bp,this,i,t));
@@ -813,7 +790,6 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		{
 		  bpthreads[t].join();
 		}
-	      //backprop(xdata[i],ydata[i],-1);
 	      for (int q = 0; q < numcores; q++)
 		{
 		  for (int j = 0; j < numhid + 1; j++)
@@ -835,6 +811,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 	    {
 	      for(int q = 0; q < numhid + 1; q++)
 		{
+		  //Weights update
 		  int rows = checkgrads[q].n_rows;
 		  int cols = checkgrads[q].n_cols;
 		  for(int rw = 0; rw < rows; rw++)
@@ -867,22 +844,18 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 			      if (rprop == 1)
 				{
 				  double sign = tgrads[q](rw,cl)/abs(tgrads[q](rw,cl));
-				  //tgrads[q](rw,cl) = -1*checkgrads[q](rw,cl);
 				  double temp;
 				  temp = 0.1*0.5;
 				  temp = max(temp,0.000001);
-				  //temp = 0.0000001;
 				  checkgrads[q](rw,cl) = sign*temp;
 				  tgrads[q](rw,cl) = sign*temp;
 				}
 			      else
 				{
 				  double sign = tgrads[q](rw,cl)/abs(tgrads[q](rw,cl));
-				  //tgrads[q](rw,cl) = -1*checkgrads[q](rw,cl);
 				  double temp;
 				  temp = abs(checkgrads[q](rw,cl))*0.5;
 				  temp = max(abs(temp),0.000001);
-				  //temp = 0.0000001;
 				  checkgrads[q](rw,cl) = sign*temp;
 				  tgrads[q](rw,cl) = sign*temp;
 				}
@@ -909,7 +882,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 			{
 			  if (checkdels[q](rw,cl)*tdels[q](rw,cl) > 0)
 			    {
-			      //push up weight
+			      //push up bias
 			      if (rprop == 1)
 				{
 				  double sign = tdels[q](rw,cl)/abs(tdels[q](rw,cl));
@@ -929,26 +902,22 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 			    }
 			  else if ((checkdels[q](rw,cl)*tdels[q](rw,cl) < 0))
 			    {
-			      //pushdown weight
+			      //pushdown bias
 			      if (rprop == 1)
 				{
 				  double sign = tdels[q](rw,cl)/abs(tdels[q](rw,cl));
-				  //tdels[q](rw,cl) = -1*checkdels[q](rw,cl);
 				  double temp;
 				  temp = 0.1*0.5;
 				  temp = max(temp,0.000001);
-				  //temp = 0.0000001;
 				  checkdels[q](rw,cl) = sign*temp;
 				  tdels[q](rw,cl) = sign*temp;
 				}
 			      else
 				{
 				  double sign = tdels[q](rw,cl)/abs(tdels[q](rw,cl));
-				  //tdels[q](rw,cl) = -1*checkdels[q](rw,cl);
 				  double temp;
 				  temp = checkdels[q](rw,cl)*0.5;
 				  temp = max(abs(temp),0.000001);
-				  //temp = 0.0000001;
 				  checkdels[q](rw,cl) = sign*temp;
 				  tdels[q](rw,cl) = sign*temp;
 				}
@@ -997,7 +966,6 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
   else if (gradd == 1)
     {
       cout<<"Initializing Stochastic Gradient Descent\n";
-      //min_rmse = -1;
       vector<int> idxs;
       for (int i = 0; i < train; i++)
 	{
@@ -1015,14 +983,12 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 	      int ncore = min(numcores,10);
 	      for(;k < step; k = k + ncore)
 		{
-		  //cout<<idxs.at(k)<<endl;
 		  if (!bpthreads.empty())
 		    {
 		      bpthreads.clear();
 		    }
 		  for (int t = 0; t < ncore; t++)
 		    {
-		      //backprop(xdata.at(idxs.at(k+t)),ydata.at(idxs.at(k+t)),-1);
 		      if (numcores > 1)
 			{ bpthreads.push_back(std::thread(&NNet::parallel_bp,this,idxs.at(k+t),t));
 			}
@@ -1060,6 +1026,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		{
 		  for(int q = 0; q < numhid + 1; q++)
 		    {
+		      //Weights update
 		      int rows = checkgrads[q].n_rows;
 		      int cols = checkgrads[q].n_cols;
 		      for(int rw = 0; rw < rows; rw++)
@@ -1069,64 +1036,47 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 			      if ((checkgrads[q](rw,cl)*tgrads[q](rw,cl) > 0))
 				{
 				  //push up weight
-				  //cout<<"Push ups"<<endl;
 				  if (rprop == 1)
 				    {
 				      double sign = (tgrads[q](rw,cl)/abs(tgrads[q](rw,cl)));
 				      tgrads[q](rw,cl) = 0.1*1.2;
-				      //tgrads[q](rw,cl) = 0.1*1.2*(tgrads[q](rw,cl)/abs(tgrads[q](rw,cl)));
 				      tgrads[q](rw,cl) = min(tgrads[q](rw,cl),rmax);
-				      //checkgrads[q](rw,cl) = sign*tgrads[q](rw,cl);
 				      checkgrads[q](rw,cl) = sign*tgrads[q](rw,cl);
 				      tgrads[q](rw,cl) = sign*tgrads[q](rw,cl);
 				    }
 				  else
 				    {
 				      double sign = tgrads[q](rw,cl)/abs(tgrads[q](rw,cl));
-				      //tgrads[q](rw,cl) = abs(checkgrads[q](rw,cl))*1.2;
 				      tgrads[q](rw,cl) = sign*checkgrads[q](rw,cl)*1.2;
 				      tgrads[q](rw,cl) = min(tgrads[q](rw,cl),rmax);
-				      //checkgrads[q](rw,cl) = sign*tgrads[q](rw,cl);
 				      checkgrads[q](rw,cl) = sign*tgrads[q](rw,cl);
 				      tgrads[q](rw,cl) = sign*tgrads[q](rw,cl);
 				    }
-				  //revertp = 1;
 				}
 			      else if ((checkgrads[q](rw,cl)*tgrads[q](rw,cl) < 0))
 				{
 				  //pushdown weight
-				  //cout<<"Push down"<<endl;
 				  if (rprop == 1)
 				    {
 				      double sign = tgrads[q](rw,cl)/abs(tgrads[q](rw,cl));
-				      //tgrads[q](rw,cl) = -1*checkgrads[q](rw,cl);
 				      double temp;
-				      //temp = 0.1*0.9;
 				      temp = 0.1*0.5;
 				      temp = max(temp,0.000001);
-				      //temp = 0.0000001;
-				      //checkgrads[q](rw,cl) = sign*temp;
 				      checkgrads[q](rw,cl) = sign*temp;
 				      tgrads[q](rw,cl) = sign*temp;
 				    }
 				  else
 				    {
 				      double sign = tgrads[q](rw,cl)/abs(tgrads[q](rw,cl));
-				      //tgrads[q](rw,cl) = -1*checkgrads[q](rw,cl);
 				      double temp;
-				      //temp = abs(checkgrads[q](rw,cl))*0.9;
 				      temp = checkgrads[q](rw,cl)*0.5;
 				      temp = max(abs(temp),0.0000001);
-				      //temp = 0.0000001;
-				      //cout<<temp<<endl;
-				      //checkgrads[q](rw,cl) = sign*temp;
 				      checkgrads[q](rw,cl) = sign*temp;
 				      tgrads[q](rw,cl) = sign*temp;
 				    }
 				}
 			      else if ((checkgrads[q](rw,cl)*tgrads[q](rw,cl) == 0))
 				{
-				  //cout<<"Stable"<<endl;
 				  if (rprop == 1)
 				    {
 				      tgrads[q](rw,cl) = 0.1*1.0*(tgrads[q](rw,cl)/abs(tgrads[q](rw,cl)));
@@ -1138,7 +1088,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 				}
 			    }
 			}
-		      //BIAS
+		      //BIAS update
 		      int brows = checkdels[q].n_rows;
 		      int bcols = checkdels[q].n_cols;
 		      for(int rw = 0; rw < brows; rw++)
@@ -1147,11 +1097,10 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 			    {
 			      if (checkdels[q](rw,cl)*tdels[q](rw,cl) > 0)
 				{
-				  //push up weight
+				  //push up bias
 				  if (rprop == 1)
 				    {
 				      double sign = tdels[q](rw,cl)/abs(tdels[q](rw,cl));
-				      //tdels[q](rw,cl) = 0.1*1.2*(tdels[q](rw,cl)/abs(tdels[q](rw,cl)));
 				      tdels[q](rw,cl) = 0.1*1.2;
 				      tdels[q](rw,cl) = min(tdels[q](rw,cl),rmax);
 				      checkdels[q](rw,cl) = sign*tdels[q](rw,cl);
@@ -1164,7 +1113,6 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 				      tdels[q](rw,cl) = min(tdels[q](rw,cl),rmax);
 				      checkdels[q](rw,cl) = sign*tdels[q](rw,cl);
 				      tdels[q](rw,cl) = sign*tdels[q](rw,cl);
-				      //checkdels[q](rw,cl) = tdels[q](rw,cl);
 				    }
 				}
 			      else if ((checkdels[q](rw,cl)*tdels[q](rw,cl) < 0))
@@ -1176,22 +1124,16 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 				      tdels[q](rw,cl) = -1*checkdels[q](rw,cl);
 				      double temp;
 				      temp = 0.1*0.5;
-				      //temp = 0.1*0.9*(tdels[q](rw,cl)/abs(tdels[q](rw,cl)));
 				      temp = max(temp,0.000001);
-				      //temp = 0.0000001;
-				      //checkdels[q](rw,cl) = sign*temp;
 				      checkdels[q](rw,cl) = sign*temp;
 				      tdels[q](rw,cl) = sign*temp;
 				    }
 				  else
 				    {
 				      double sign = tdels[q](rw,cl)/abs(tdels[q](rw,cl));
-				      //tdels[q](rw,cl) = -1*checkdels[q](rw,cl);
 				      double temp;
 				      temp = checkdels[q](rw,cl)*0.5;
 				      temp = max(abs(temp),0.000001);
-				      //temp = 0.0000001;
-				      //checkdels[q](rw,cl) = sign*temp;
 				      checkdels[q](rw,cl) = sign*temp;
 				      tdels[q](rw,cl) = sign*temp;
 				    }
@@ -1325,15 +1267,12 @@ void NNet::test_net(int testmode, int verbose)
   int passed = 0;
   int error = 0;
   for (int i = start; i < stop; i++)
-  //for (int i = 0; i < train; i++)
     {
       feed_forward(xdata[i],-1);
-      //cout<<bias[numhid]<<endl;
       if (classreg == 0)
 	{
 	  int max = 0;
 	  int idx = 0;
-	  //int lent = numlayers[numhid + 1];
 	  int lent = activ[0][numhid + 1].n_rows;
 	  int alent = numhid + 1;
 	  for (int j = 0; j < lent; j++)
@@ -1367,12 +1306,9 @@ void NNet::test_net(int testmode, int verbose)
       else
 	{
 	  int chk = 1;
-	  //int lent = numlayers[numhid + 1];
 	  int lent = activ[0][numhid + 1].n_rows;
-	  //double error = 0;
 	  for (int j = 0; j < lent; j++)
 	    {
-	      //cout<<ydata[i](j,0)<<" "<<activ[0][numhid+1](j,0)<<"\n";
 	      error = error + pow(ydata[i](j,0) - activ[0][numhid + 1](j,0),2);
 	      if (abs(activ[0][numhid + 1](j,0) - ydata[i](j,0)) <= 0.1)
 		{
@@ -1389,9 +1325,7 @@ void NNet::test_net(int testmode, int verbose)
 	      passed++;
 	    }
 	}
-      //counter++;
     }
-  //cout<<passed<<"\n";
   double hitrate = ((double)passed/(double)(stop-start))*100;
   double RMSE = sqrt((error/(double)(stop-start)));
   if (verbose == 1)
@@ -1735,12 +1669,9 @@ void NNet::test_file(string filename,int verbose,int ffmode, string sep1, string
       else
 	{
 	  int chk = 1;
-	  //int lent = numlayers[numhid + 1];
 	  int lent = activ[0][numhid + 1].n_rows;
-	  //double error = 0;
 	  for (int j = 0; j < lent; j++)
 	    {
-	      //cout<<testydata[i](j,0)<<" "<<activ[0][numhid+1](j,0)<<"\n";
 	      error = error + pow(testydata[i](j,0) - activ[0][numhid + 1](j,0),2);
 	      if (abs(activ[0][numhid + 1](j,0) - testydata[i](j,0)) <= 0.1)
 		{
@@ -1757,9 +1688,7 @@ void NNet::test_file(string filename,int verbose,int ffmode, string sep1, string
 	      passed++;
 	    }
 	}
-      //counter++;
     }
-  //cout<<passed<<"\n";
   double hitrate = ((double)passed/(double)numlines)*100;
   if (verbose == 1)
     {
@@ -1782,7 +1711,7 @@ void NNet::test_file(string filename,int verbose,int ffmode, string sep1, string
 	  cout<<"Passed: "<<passed<<endl;
 	}
     }
-  return;
+  return; 
 }
 
 
@@ -2805,10 +2734,6 @@ void NNet::l_savenet(void)
       netnames.push_back(temp);
       lsavenets(netnames.at(i),i);
     }
-  //for(int i = 0; i < numfiles; i++)
-  //{
-  //  lsavenets(netnames.at(i),i);
-  //}
   string input_name;
   string ans = "y";
   cout<<"Please enter the name of the input file: ";
