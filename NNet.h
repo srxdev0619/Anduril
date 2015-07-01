@@ -47,7 +47,6 @@ class NNet
  private:
   //Variables
   // stores the architecture of hidden layers in a array
-  //vector<int> paracheck;
   int trained;
   int l_trained;
   int *config;
