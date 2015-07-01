@@ -139,7 +139,7 @@ void NNet::init(string sconfig, int iclassreg, int inumcores, int igradd, int ic
       cout<<"Invalid network configuration!\n";
       return;
     }
-  if ((gradd == 1) && (epoch <= 0))
+  if (epoch <= 0)
     {
       cout<<"Invalid configuration\nPlease choose the number of epochs to be trained";
       return;
@@ -530,7 +530,7 @@ void NNet::backprop(mat x, mat y, int gpos)
 
 
 //Train the neural network
-void NNet::train_net(double lrate, int mode)
+void NNet::train_net(double lrate, int mode, int verbose)
 {
   int trainmode = mode;
   vector<thread> bpthreads;
@@ -550,9 +550,9 @@ void NNet::train_net(double lrate, int mode)
     {
       //int stop = 0;
       double beta = 0.2;
-      for (int k = 0; k < 5; k++)
+      for (int k = 0; k < epoch; k++)
 	{
-	  cout<<k<<"%\n";
+	  cout<<(double)k*100/(double)epoch<<"%\n";
 	  for (int i = 0; i < train; i++)
 	    {
 	      //cout<<train;
@@ -701,11 +701,11 @@ void NNet::train_net(double lrate, int mode)
 	      ttemp_rmse = temp_rmse;
 	      if (loadmode == 1)
 		{
-		  test_file(loadfile);
+		  test_file(loadfile,verbose);
 		}
 	      else 
 		{
-		  test_net(1);
+		  test_net(1,verbose);
 		}
 	      if (min_rmse == -1)
 		{
@@ -777,7 +777,7 @@ void NNet::train_net(double lrate, int mode)
 
 
 //Trains the network accroding to RPROP
-void NNet::train_rprop(int mode,double tmax)
+void NNet::train_rprop(int mode,int verbose,double tmax)
 {
   int trainmode = mode;
   vector<thread> bpthreads;
@@ -798,9 +798,9 @@ void NNet::train_rprop(int mode,double tmax)
   if (gradd == 0)
     {
       //int stop = 0;
-      for (int k = 0; k < 5; k++)
+      for (int k = 0; k < epoch; k++)
 	{
-	  cout<<k<<"%\n";
+	  cout<<(double)k*100/(double)epoch<<"%\n";
 	  for (int i = 0; i < train; i++)
 	    {
 	      //cout<<train;
@@ -958,14 +958,10 @@ void NNet::train_rprop(int mode,double tmax)
 			      if (rprop == 1)
 				{
 				  tdels[q](rw,cl) = 0.1*1.0*(tdels[q](rw,cl)/abs(tdels[q](rw,cl)));
-				  //tdels[q](rw,cl) = min(tdels[q](rw,cl),20.0);
-				  //checkdels[q](rw,cl) = tdels[q](rw,cl);
 				}
 			      else
 				{
 				  tdels[q](rw,cl) = abs(checkdels[q](rw,cl))*1.0*(tdels[q](rw,cl)/abs(tdels[q](rw,cl)));
-				  //tdels[q](rw,cl) = min(tdels[q](rw,cl),20.0);
-				  //checkdels[q](rw,cl) = tdels[q](rw,cl);
 				}
 			    }
 			}
@@ -1248,11 +1244,11 @@ void NNet::train_rprop(int mode,double tmax)
 	      ttemp_rmse = temp_rmse;
 	      if (loadmode == 1)
 		{
-		  test_file(loadfile);
+		  test_file(loadfile,verbose);
 		}
 	      else 
 		{
-		  test_net(1);
+		  test_net(1,verbose);
 		}
 	      if (min_rmse == -1)
 		{
@@ -1302,7 +1298,7 @@ void NNet::train_rprop(int mode,double tmax)
 
 
 //Test the network
-void NNet::test_net(int testmode)
+void NNet::test_net(int testmode, int verbose)
 {
    if (loadmode != 0)
     {
@@ -1376,7 +1372,7 @@ void NNet::test_net(int testmode)
 	  //double error = 0;
 	  for (int j = 0; j < lent; j++)
 	    {
-	      cout<<ydata[i](j,0)<<" "<<activ[0][numhid+1](j,0)<<"\n";
+	      //cout<<ydata[i](j,0)<<" "<<activ[0][numhid+1](j,0)<<"\n";
 	      error = error + pow(ydata[i](j,0) - activ[0][numhid + 1](j,0),2);
 	      if (abs(activ[0][numhid + 1](j,0) - ydata[i](j,0)) <= 0.1)
 		{
@@ -1398,15 +1394,25 @@ void NNet::test_net(int testmode)
   //cout<<passed<<"\n";
   double hitrate = ((double)passed/(double)(stop-start))*100;
   double RMSE = sqrt((error/(double)(stop-start)));
-  cout<<"The accuracy is: "<<hitrate<<"%\n";
+  if (verbose == 1)
+    {
+      cout<<"The accuracy is: "<<hitrate<<"%\n";
+    }
   if(classreg == 1)
     {
       temp_rmse = RMSE;
-      cout<<"RMSE: "<<RMSE<<endl;
+      if (verbose == 1)
+	{
+	  cout<<"RMSE: "<<RMSE<<endl;
+	}
     }
   else
     {
       temp_rmse = hitrate;
+      if (verbose == 1)
+	{
+	  cout<<"Passed: "<<passed<<endl;
+	}
     }
   return;
 }
@@ -1611,7 +1617,7 @@ void NNet::snets(void)
 
 
 //This method is to test data of a specific file
-void NNet::test_file(string filename,int ffmode, string sep1, string sep2)
+void NNet::test_file(string filename,int verbose,int ffmode, string sep1, string sep2)
 {
   if (loadmode != 1)
     {
@@ -1753,18 +1759,28 @@ void NNet::test_file(string filename,int ffmode, string sep1, string sep2)
 	}
       //counter++;
     }
-  cout<<passed<<"\n";
+  //cout<<passed<<"\n";
   double hitrate = ((double)passed/(double)numlines)*100;
-  cout<<"The accuracy is: "<<hitrate<<"%\n";
+  if (verbose == 1)
+    {
+      cout<<"The accuracy is: "<<hitrate<<"%\n";
+    }
   double RMSE = sqrt((error/(double)numlines));
   if(classreg == 1)
     {
       temp_rmse = RMSE;
-      cout<<"RMSE: "<<RMSE<<endl;
+      if (verbose == 1)
+	{
+	  cout<<"RMSE: "<<RMSE<<endl;
+	}
     }
   else
     {
       temp_rmse = hitrate;
+      if (verbose == 1)
+	{
+	  cout<<"Passed: "<<passed<<endl;
+	}
     }
   return;
 }
@@ -1848,7 +1864,7 @@ void NNet::l_init(int num_files, int iclassreg, int inumcores, int igradd, int i
       cout<<"Invalid network configuration!\n";
       return;
     }
-  if ((gradd == 1) && (epoch <= 0))
+  if (epoch <= 0)
     {
       cout<<"Invalid configuration\nPlease choose the number of epochs to be trained";
       return;
@@ -2022,9 +2038,9 @@ void NNet::l_load(string Qmatrix, int lmode, string input_file, string sep1)
 	    {
 	      if  ((isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)) && (temp.at(i) != qsep.at(0)))
 		{
-	      cout<<temp.at(i)<<endl;
-	      cout << "Invalid file format!\n";
-	      return;
+		  cout<<temp.at(i)<<endl;
+		  cout << "Invalid file format!\n";
+		  return;
 		}
 	      if (((i < (lent-1))) && ((temp.at(i) == decp.at(0)) || (temp.at(i) == minussb.at(0)) || (isdigit(temp.at(i)) != 0)))
 		{
@@ -2414,9 +2430,9 @@ void NNet::l_trainnet(int numlatent, int mode)
     {
       //int stop = 0;
       //double beta = 0.2;
-      for (int k = 0; k < 5; k++)
+      for (int k = 0; k < epoch; k++)
 	{
-	  cout<<k<<"%\n";
+	  cout<<(double)k*100/(double)epoch<<"%\n";
 	  for (int i = 0; i < train; i++)
 	    {
 	      //cout<<train;
@@ -2540,7 +2556,7 @@ void NNet::l_trainnet(int numlatent, int mode)
 	  cout<<((double)i/(double)epoch)*100<<"%\n";
 	  if (trainmode == 1)
 	    {
-	      testvoids(0);
+	      l_testall();
 	      cout<<endl;
 	    }
 	  int step = 0;
@@ -2548,29 +2564,10 @@ void NNet::l_trainnet(int numlatent, int mode)
 	    {
 	      lrates[lr] = 0.99*lrates[lr];
 	    }
-	  //lrate = 0.999*lrate;
-	  //if (classreg == 0)
-	  //{
-	  //  if ( i < (epoch/2.0))
-	  //	{
-	  //	  beta = 0.2;
-	  //	}
-	  //  else
-	  //	{
-	  //	  beta = 0.9;
-	  //	}
-	  //}
 	  while (step < l_train)
 	    {
 	      int k = step;
 	      step = min(step + 10,l_train);
-	      //if (classreg == 0)
-	      //{
-	      //  for (int yt = 0; yt < numhid + 1; yt++)
-	      //    {
-	      //      l_params.at(yt) = l_params.at(yt) + beta*l_velocity.at(yt);
-	      //    }
-	      //}
 	      for(;k < step; k++)
 		{
 		  if (!l_bpthreads.empty())
@@ -3053,11 +3050,14 @@ void NNet::testvoids(int mode)
   //cout<<"COUNT: "<<count<<endl;
   for(int i = 0; i < numfiles; i++)
     {
-      //cout<<"COUNTS: "<<counts[i]<<endl;
       double frmse = sqrt(LRMSE[i]/(double)counts[i]);
-      cout<<"RMSE of file "<<filenames[i]<<" is: "<<frmse<<endl;
+      //cout<<"RMSE of file "<<filenames[i]<<" is: "<<frmse<<endl;
       double averr = (sqrt(LRMSE[i])/(double)counts[i]);
-      cout<<"Error of file "<<filenames[i]<<" is: "<<averr<<endl;
+      if (mode == 1)
+	{
+	  cout<<"Error of file "<<filenames[i]<<" is: "<<averr<<endl;
+	  cout<<"RMSE of file "<<filenames[i]<<" is: "<<frmse<<endl;
+	}
     }
 }
 
@@ -3146,9 +3146,14 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
     {
       //int stop = 0;
       //double beta = 0.2;
-      for (int k = 0; k < 5; k++)
+      for (int k = 0; k < epoch; k++)
 	{
-	  cout<<k<<"%\n";
+	  cout<<(double)k*100/(double)epoch<<"%\n";
+	  if (trainmode == 1)
+	    {
+	      l_testall();
+	      cout<<endl;
+	    }
 	  for (int i = 0; i < train; i++)
 	    {
 	      int threadcount = 0;
@@ -3417,7 +3422,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 	  cout<<((double)i/(double)epoch)*100<<"%\n";
 	  if (trainmode == 1)
 	    {
-	      testvoids(0);
+	      l_testall();
 	      cout<<endl;
 	    }
 	  int step = 0;
@@ -3758,10 +3763,8 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 			}
 		      else
 			{
-			  //cout<<"HERE!"<<endl;
 			  l_params[q][j] = l_params[q][j] - l_tgrads[q][j];
 			  l_bias[q][j] = l_bias[q][j] - l_tdels[q][j+1];
-			  //cout<<l_tgrads[q][j]<<endl<<endl;
 			  l_tgrads[q][j].fill(0.0);
 			  l_tdels[q][j+1].fill(0.0);
 			}
@@ -3820,3 +3823,90 @@ void NNet::l_funcarch(void)
     }
   return;
 }
+
+
+//
+void NNet::l_testall(void)
+{
+  vector<double> TRRMSE;
+  vector<double> TSRMSE;
+  vector<int> tscounts;
+  vector<int> trcounts;
+  for (int i = 0; i < numfiles; i++)
+    {
+      TRRMSE.push_back(0);
+      TSRMSE.push_back(0);
+      tscounts.push_back(0);
+      trcounts.push_back(0);
+    }
+  //int count = 0;
+  for(int i = 0; i < l_train; i++)
+    {
+      for (int j = 0; j < numfiles; j++)
+	{
+	  int l_numhid;
+	  if(qmat == 1)
+	    {
+	      if (Q_mat[i][j] == 0)
+		{
+		  l_feedforward(l_xvals[i],j);
+		  l_numhid = l_numhids[j];
+		  int lent = l_numlayers[j][l_numhid + 1];
+		  double err = 0;
+		  for(int t = 0; t < lent; t++)
+		    {
+		      err = err + pow(l_activ[j][l_numhid + 1][t] - l_yvals[j][i][t],2);
+		    }
+		  TSRMSE[j] = TSRMSE[j] + err;
+		  tscounts[j]++; 
+		}
+	      else
+		{
+		  l_feedforward(l_xvals[i],j);
+		  l_numhid = l_numhids[j];
+		  int lent = l_numlayers[j][l_numhid + 1];
+		  double err = 0;
+		  for(int t = 0; t < lent; t++)
+		    {
+		      err = err + pow(l_activ[j][l_numhid + 1][t] - l_yvals[j][i][t],2);
+		    }
+		  TRRMSE[j] = TRRMSE[j] + err;
+		  trcounts[j]++; 
+		}
+	    } 
+	  else
+	    {
+	       l_feedforward(l_xvals[i],j);
+	       l_numhid = l_numhids[j];
+	       int lent = l_numlayers[j][l_numhid + 1];
+	       double err = 0;
+	       for(int t = 0; t < lent; t++)
+		 {
+		   err = err + pow(l_activ[j][l_numhid + 1][t] - l_yvals[j][i][t],2);
+		 }
+	       TRRMSE[j] = TRRMSE[j] + err;
+	       trcounts[j]++;
+	    }
+	}
+    }
+  //cout<<"COUNT: "<<count<<endl; 
+  for(int i = 0; i < numfiles; i++)
+    {
+      //cout<<"COUNTS: "<<counts[i]<<endl;
+      double frmse = sqrt(TRRMSE[i]/(double)trcounts[i]);
+      //cout<<"RMSE of file "<<filenames[i]<<" is: "<<frmse<<endl;
+      double averr = (sqrt(TRRMSE[i])/(double)trcounts[i]);
+      double tsrmse = sqrt(TSRMSE[i]/(double)tscounts[i]);
+      double tserror = sqrt(TSRMSE[i]/(double)tscounts[i]);
+      cout<<"Training error"<<endl;
+      cout<<"Error of file "<<filenames[i]<<" is: "<<averr<<endl;
+      cout<<"RMSE of file "<<filenames[i]<<" is: "<<frmse<<endl;
+      if (qmat == 1)
+	{
+	  cout<<"\nTest Error"<<endl;
+	  cout<<"Error of file "<<filenames[i]<<" is: "<<tserror<<endl;
+	  cout<<"RMSE of file "<<filenames[i]<<" is: "<<tsrmse<<endl;
+	}
+    }
+}
+

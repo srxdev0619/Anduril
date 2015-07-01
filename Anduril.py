@@ -1,7 +1,7 @@
 from NNet import *
 
 class Anduril():
-    def __init__(self,sconfig,classreg = 0, numcores = 1, gradd = 0, costfunc = 0, epoch = -1):
+    def __init__(self,sconfig,classreg = 0, numcores = 1, gradd = 0, costfunc = 0, epoch = 1):
         self.Net = NNet()
         self.Net.init(sconfig,classreg,numcores,gradd,costfunc,epoch)
 
@@ -21,33 +21,33 @@ class Anduril():
             print "Invalid input, files not loaded!"
             return;
 
-    def test_file(self,filename, mode = -1, sep1 = ",", sep2 = " "):
-        if (type(filename) == str) and (type(mode) == int) and (type(sep1) == str) and (type(sep2) == " "):
-            self.Net.test_file(filename, mode, sep1, sep2)
+    def test_file(self,filename, verbose = 0, mode = -1, sep1 = ",", sep2 = " "):
+        if (type(filename) == str) and (type(verbose) == int) and (type(mode) == int) and (type(sep1) == str) and (type(sep2) == " "):
+            self.Net.test_file(filename, verbose, mode, sep1, sep2)
             return
         else:
             print "Invalid input type!"
             return
 
-    def train_net(self,lrate, mode = 0):
-        if (type(lrate) == float) and (type(mode) == int):
-            self.Net.train_net(lrate,mode)
+    def train_net(self,lrate, mode = 0, verbose = 0):
+        if (type(lrate) == float) and (type(mode) == int) and (type(verbose) == int):
+            self.Net.train_net(lrate,mode,verbose)
             return
         else:
             print "Invalid input, network not trained!"
             return
 
-    def train_rprop(self,mode = 0, tmax = 15.0):
-        if (type(mode) == int) and (type(tmax) == float):
-            self.Net.train_rprop(mode,tmax)
+    def train_rprop(self,mode = 0, verbose = 0, tmax = 15.0):
+        if (type(mode) == int) and (type(verbose) == int) and (type(tmax) == float):
+            self.Net.train_rprop(mode,verbose,tmax)
             return
         else:
             print "Invalid input, network not trained!"
             return
 
-    def test_net(self,mode = 0):
-        if (type(mode) == int):
-            self.Net.test_net(mode)
+    def test_net(self,mode = 0,verbose = 0):
+        if (type(mode) == int) and (type(verbose) == int):
+            self.Net.test_net(mode,verbose)
             return
         else:
             print "Invalid input!"
@@ -81,7 +81,7 @@ class Anduril():
             print "Invalid input!"
             return
 
-    def l_init(self,numfiles,classreg = 0,gradd = 0, costfunc = 0, epoch = -1):
+    def l_init(self,numfiles,classreg = 0,gradd = 0, costfunc = 0, epoch = 1):
         if (type(numfiles) == str) and (type(classreg) == int) and (type(gradd) == int) and (type(costfunc) == int) and (type(epoch) == int):
             self.Net.l_load(numfiles,classreg,1,gradd,costfunc,epoch)
             return
