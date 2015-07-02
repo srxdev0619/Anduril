@@ -3211,7 +3211,6 @@ void NNet::test_data(string in_filename, string out_filename, string netname, st
   while (getline(ldata,temp))
     {
       int lent = temp.length();
-      //int track = 0;
       string num = "";
       if (ytemp != county)
 	{
@@ -3247,9 +3246,7 @@ void NNet::test_data(string in_filename, string out_filename, string netname, st
 	      countx++;
 	    }
 	}
-      //mat mtempx(xvals);
       mat mtempy(yvals);
-      //xdata.push_back(mtempx);
       testydata.push_back(mtempy);
       ynumlines++;
     }
@@ -3260,7 +3257,6 @@ void NNet::test_data(string in_filename, string out_filename, string netname, st
       return;
     }
   double error = 0;
-  //int passes = 0;
   for(int i = 0; i < xnumlines; i++)
     {
       feed_forward(xdata[i],-1);
@@ -3289,7 +3285,6 @@ void NNet::testvoids(int mode)
       LRMSE.push_back(0);
       counts.push_back(0);
     }
-  //int count = 0;
   for(int i = 0; i < l_train; i++)
     {
       for (int j = 0; j < numfiles; j++)
@@ -3305,10 +3300,6 @@ void NNet::testvoids(int mode)
 		  double err = 0;
 		  for(int t = 0; t < lent; t++)
 		    {
-		      if((mode == 1) && (j == 0)) //temporary just to check why the NN is performing so badly on volume
-			{
-			  cout<<l_activ[j][l_numhid + 1][t]<<" "<<l_yvals[j][i][t]<<endl;
-			}
 		      err = err + pow(l_activ[j][l_numhid + 1][t] - l_yvals[j][i][t],2);
 		    }
 		  LRMSE[j] = LRMSE[j] + err;
@@ -3330,11 +3321,9 @@ void NNet::testvoids(int mode)
 	    }
 	}
     }
-  //cout<<"COUNT: "<<count<<endl;
   for(int i = 0; i < numfiles; i++)
     {
       double frmse = sqrt(LRMSE[i]/(double)counts[i]);
-      //cout<<"RMSE of file "<<filenames[i]<<" is: "<<frmse<<endl;
       double averr = (sqrt(LRMSE[i])/(double)counts[i]);
       if (mode == 1)
 	{
@@ -3357,8 +3346,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
   int trainmode = mode;
   int rprop = 0;
   vector<thread> l_bpthreads;
-  //int revertp = 0;
-  //int revertb = 0;
   double rmax = tmax;
   int lat_rprop = 0;
   if ((trainmode != 0) && (trainmode != 1))
@@ -3426,14 +3413,10 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
   for(int i = 0; i < numfiles; i++)
     {
       double rate = 0.0001;
-      //cout<<"Please enter the desired learning rate for NN "<<to_string(i+1)<<": ";
-      //cin>>rate;
       lrates.push_back(rate);
     }
   if (gradd == 0)
     {
-      //int stop = 0;
-      //double beta = 0.2;
       for (int k = 0; k < epoch; k++)
 	{
 	  cout<<(double)k*100/(double)epoch<<"%\n";
@@ -3452,12 +3435,12 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 		      if (Q_mat[i][j] == 1)
 			{
 			  l_bpthreads.push_back(std::thread(&NNet::l_parallelbp,this,i,j));
-		      threadcount++;
+			  threadcount++;
 			}
 		    }
 		  else
 		    {
-		    l_bpthreads.push_back(std::thread(&NNet::l_parallelbp,this,i,j));
+		      l_bpthreads.push_back(std::thread(&NNet::l_parallelbp,this,i,j));
 		      threadcount++;
 		    }
 		}
@@ -3564,7 +3547,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 				  if (rprop == 1)
 				    {
 				      double sign = l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl));
-				      //l_tgrads[fl][q](rw,cl) = -1*l_checkgrads[fl][q](rw,cl);
 				      double temp;
 				      temp = 0.1*0.5*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
 				      temp = max(abs(temp),0.000001);
@@ -3574,7 +3556,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 				  else
 				    {
 				      double sign = l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl));
-				      //l_tgrads[fl][q](rw,cl) = -1*l_checkgrads[fl][q](rw,cl);
 				      double temp;
 				      temp = l_checkgrads[fl][q](rw,cl)*0.5;
 				      temp = max(abs(temp),0.000001);
@@ -3604,7 +3585,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 			    {
 			      if (l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) > 0)
 				{
-				  //push up weight
+				  //push up bias
 				  if (rprop == 1)
 				    {
 				      double sign = l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl));
@@ -3614,7 +3595,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 				    }
 				  else
 				    {
-				      //double sign = l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl));
 				      double sign = l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl));
 				      l_tdels[fl][q+1](rw,cl) = sign*l_checkdels[fl][q](rw,cl)*1.2;
 				      l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
@@ -3623,7 +3603,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 				}
 			      else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) < 0))
 				{
-				  //pushdown weight
+				  //pushdown bias
 				  if (rprop == 1)
 				    {
 				      double sign = l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl));
@@ -3636,7 +3616,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 				  else
 				    {
 				      double sign = l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl));
-				      //l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
 				      double temp;
 				      temp = l_checkdels[fl][q](rw,cl)*0.5;
 				      temp = max(abs(temp),0.000001);
@@ -3649,14 +3628,10 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 				  if (rprop == 1)
 				    {
 				      l_tdels[fl][q+1](rw,cl) = 0.1*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
-				      //l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),20.0);
-				      //l_checkdels[fl][q](rw,cl) = l_tdels[fl][q+1](rw,cl);
 				    }
 				  else
 				    {
 				      l_tdels[fl][q+1](rw,cl) = abs(l_checkdels[fl][q](rw,cl))*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
-				      //l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),20.0);
-				      //l_checkdels[fl][q](rw,cl) = l_tdels[fl][q+1](rw,cl);
 				    }
 				}
 			    }
@@ -3695,7 +3670,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 	     }
 	}
     }
-  //TODO:MODIFY SGD FOR LATENT PARAMS
   else if (gradd == 1)
     {
       cout<<"Initializing Stochastic Gradient Descent L\n";
@@ -3727,7 +3701,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 		  int threadcount = 0;
 		  for (int t = 0; t < numfiles; t++)
 		    {
-		      //cout<<"Q-val: "<<Q_mat[idxs.at(k)][t]<<endl;
 		      if(qmat == 1)
 			{
 			  if (Q_mat[idxs.at(k)][t] == 1)
@@ -3801,14 +3774,12 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 		    }
 		  else
 		    {
-		      //int revertlat = 0;
 		      for(int j = 0; j < numlatent; j++)
 			{
 			  if (lat_checkgrads(j,0)*lat_grads(j,0) > 0)
 			    {
 			      if (lat_rprop == 1)
 				{
-				  //cout<<"P"<<endl;
 				  double sign = lat_grads(j,0)/abs(lat_grads(j,0));
 				  lat_grads(j,0) = sign*1.2*0.1;
 				  lat_checkgrads(j,0) = lat_grads(j,0);
@@ -3833,7 +3804,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 			      else
 				{
 				  double sign = lat_grads(j,0)/abs(lat_grads(j,0));
-				  //lat_grads(j,0) = sign*abs(lat_checkgrads(j,0))*0.5;
 				  double temp = 0.5*abs(lat_checkgrads(j,0));
 				  temp = max(temp,0.0000001);
 				  lat_checkgrads(j,0) = sign*temp;
@@ -3896,8 +3866,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 		{
 		  for (int fl = 0; fl < numfiles; fl++)
 		    {
-		      //revertp = 0;
-		      //revertb = 0;
 		      int l_numhid = l_numhids[fl];
 		      for(int q = 0; q < l_numhid + 1; q++)
 			{
@@ -3947,7 +3915,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 					  double temp;
 					  temp = l_checkgrads[fl][q](rw,cl)*0.5;
 					  temp = max(abs(temp),0.000001);
-					  //temp = 0.001;
 					  l_checkgrads[fl][q](rw,cl) = sign*(temp);
 					}
 				    }
@@ -3993,7 +3960,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 				    }
 				  else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) < 0))
 				    {
-				      //pushdown weight
+				      //pushdown bias
 				      if (rprop == 1)
 					{
 					  double sign = l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl));
@@ -4001,7 +3968,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 					  double temp;
 					  temp = 0.1*0.5;
 					  temp = max(abs(temp),0.000001);
-					  //temp = 0.0000001;
 					  l_checkdels[fl][q](rw,cl) = sign*(temp);
 					}
 				      else
@@ -4011,7 +3977,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 					  double temp;
 					  temp = l_checkdels[fl][q](rw,cl)*0.5;
 					  temp = max(abs(temp),0.000001);
-					  //temp = 0.0000001;
 					  l_checkdels[fl][q](rw,cl) = sign*(temp);
 					}
 				    }
@@ -4020,14 +3985,10 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 				      if (rprop == 1)
 					{
 					  l_tdels[fl][q+1](rw,cl) = 0.1*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
-					  //l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),20.0);
-					  //l_checkdels[fl][q](rw,cl) = l_tdels[fl][q+1](rw,cl);
 					}
 				      else
 					{
 					  l_tdels[fl][q+1](rw,cl) = abs(l_checkdels[fl][q](rw,cl))*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
-					  //l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),20.0);
-					  //l_checkdels[fl][q](rw,cl) = l_tdels[fl][q+1](rw,cl);
 					}
 				    }
 				}
@@ -4045,7 +4006,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 			{
 			  l_params[q][j] = l_params[q][j] - (0.00001/(double)l_train)*l_tgrads[q][j] - 0.0001*l_params[q][j];
 			  l_bias[q][j] = l_bias[q][j] - (0.00001/(double)l_train)*l_tdels[q][j+1];
-			  //cout<<l_tgrads[q][j]<<endl<<endl;
 			  l_tgrads[q][j].fill(0.0);
 			  l_tdels[q][j+1].fill(0.0);
 			}
@@ -4066,7 +4026,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 		{
 		  rprop++;
 		}
-	      //cout<<"RPROP: "<<rprop<<endl;
 	    }
 	}
     }
@@ -4128,7 +4087,6 @@ void NNet::l_testall(void)
       tscounts.push_back(0);
       trcounts.push_back(0);
     }
-  //int count = 0;
   for(int i = 0; i < l_train; i++)
     {
       for (int j = 0; j < numfiles; j++)
@@ -4178,12 +4136,9 @@ void NNet::l_testall(void)
 	    }
 	}
     }
-  //cout<<"COUNT: "<<count<<endl; 
   for(int i = 0; i < numfiles; i++)
     {
-      //cout<<"COUNTS: "<<counts[i]<<endl;
       double frmse = sqrt(TRRMSE[i]/(double)trcounts[i]);
-      //cout<<"RMSE of file "<<filenames[i]<<" is: "<<frmse<<endl;
       double averr = (sqrt(TRRMSE[i])/(double)trcounts[i]);
       cout<<"Training error"<<endl;
       cout<<"Error of file "<<filenames[i]<<" is: "<<averr<<endl;
