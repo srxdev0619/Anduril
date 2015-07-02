@@ -1729,8 +1729,6 @@ void NNet::test_file(string filename,int verbose,int ffmode, string sep1, string
 /*
  *DEFINED BELOW ARE METHODS TO TEST AN EXPERIMENTAL ALGORITHM FOR LEARNING, ONLY 
  *FOR THE BRAVE AND COURAGEOUS
- *
- *TODO: CHECK ASSIGNMENT OF ALL NETWORK ARCHITECTURES
  */
 
 
@@ -1841,7 +1839,6 @@ void NNet::ls_init(string nconfig, int iclassreg, int igradd, int icostfunc, int
 	    }
 	}
     }
-  //numhid = count;
   vector<mat> tr;
   l_dels.push_back(tr);
   l_tdels.push_back(tr);
@@ -1939,9 +1936,10 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
 	  if((tempcount != county) && (tempcount != 0))
 	    {
 	      cout<<"Change in length of output!\n";
-	       l_params.clear();
-	       l_bias.clear();
-	       l_yvals.clear();
+	      filenames.clear();
+	      l_params.clear();
+	      l_bias.clear();
+	      l_yvals.clear();
 	      return;
 	    }
 	  tempcount = county;
@@ -1952,6 +1950,9 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
 	      if  ((isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)) && (temp.at(i) != sep1.at(0)))
 		{
 		  cout << "Invalid file format!\n";
+		  l_params.clear();
+		  l_bias.clear();
+		  l_yvals.clear();
 		  return;
 		}
 	      if (((i < (lent-1))) && ((temp.at(i) == decp.at(0)) || (temp.at(i) == minussb.at(0)) || (isdigit(temp.at(i)) != 0)))
@@ -2007,7 +2008,6 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
 	  string num = "";
 	  if((qtempcount != qcounty) && (qtempcount != 0))
 	    {
-	      cout<<temp;
 	      cout<<"Change in length of output!\n";
 	      filenames.clear();
 	      l_yvals.clear();
@@ -2022,9 +2022,12 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
 	    {
 	      if  ((isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)) && (temp.at(i) != qsep.at(0)))
 		{
-	      cout<<temp.at(i)<<endl;
-	      cout << "Invalid file format!\n";
-	      return;
+		  cout << "Invalid file format!\n";
+		  filenames.clear();
+		  l_yvals.clear();
+		  l_params.clear();
+		  l_bias.clear();
+		  return;
 		}
 	      if (((i < (lent-1))) && ((temp.at(i) == decp.at(0)) || (temp.at(i) == minussb.at(0)) || (isdigit(temp.at(i)) != 0)))
 		{
@@ -2052,6 +2055,11 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
       if (!ldata.is_open())
 	{
 	  cout<<"Error opening file!\n";
+	  filenames.clear();
+	  Q_mat.clear();
+	  l_yvals.clear();
+	  l_params.clear();
+	  l_bias.clear();
 	  return;
 	}
       int xnumlines = 0;
@@ -2080,12 +2088,12 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
 	      if  ((isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)) && (temp.at(i) != sep1.at(0)))
 		{
 		  cout << "Invalid file format!\n";
-		   filenames.clear();
-		   Q_mat.clear();
-		   l_yvals.clear();
-		   l_params.clear();
-		   l_bias.clear();
-		   l_xvals.clear();
+		  filenames.clear();
+		  Q_mat.clear();
+		  l_yvals.clear();
+		  l_params.clear();
+		  l_bias.clear();
+		  l_xvals.clear();
 		  return;
 		}
 	      if (((i < (lent-1))) && ((temp.at(i) == decp.at(0)) || (temp.at(i) == minussb.at(0)) || (isdigit(temp.at(i)) != 0)))
@@ -2113,12 +2121,12 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
       if (xnumlines != qnumlines)
 	{
 	  cout<<"Missing Q-matrix entries for certain data points!"<<endl;
-	   filenames.clear();
-	   Q_mat.clear();
-	   l_yvals.clear();
-	   l_params.clear();
-	   l_bias.clear();
-	   l_xvals.clear();
+	  filenames.clear();
+	  Q_mat.clear();
+	  l_yvals.clear();
+	  l_params.clear();
+	  l_bias.clear();
+	  l_xvals.clear();
 	  return;
 	}
       l_numx = countx;
@@ -2315,6 +2323,10 @@ void NNet::l_load(string Qmatrix, int lmode, string input_file, string sep1)
 	      if  ((isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)) && (temp.at(i) != sep1.at(0)))
 		{
 		  cout << "Invalid file format!\n";
+		  filenames.clear();
+		  l_params.clear();
+		  l_bias.clear();
+		  l_yvals.clear();
 		  return;
 		}
 	      if (((i < (lent-1))) && ((temp.at(i) == decp.at(0)) || (temp.at(i) == minussb.at(0)) || (isdigit(temp.at(i)) != 0)))
@@ -2445,12 +2457,12 @@ void NNet::l_load(string Qmatrix, int lmode, string input_file, string sep1)
 	      if  ((isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)) && (temp.at(i) != sep1.at(0)))
 		{
 		  cout << "Invalid file format!\n";
-		   filenames.clear();
-		   l_params.clear();
-		   l_bias.clear();
-		   l_yvals.clear();
-		   Q_mat.clear();
-		   l_xvals.clear();
+		  filenames.clear();
+		  l_params.clear();
+		  l_bias.clear();
+		  l_yvals.clear();
+		  Q_mat.clear();
+		  l_xvals.clear();
 		  return;
 		}
 	      if (((i < (lent-1))) && ((temp.at(i) == decp.at(0)) || (temp.at(i) == minussb.at(0)) || (isdigit(temp.at(i)) != 0)))
@@ -2510,47 +2522,6 @@ void NNet::l_load(string Qmatrix, int lmode, string input_file, string sep1)
 void NNet::l_feedforward(mat x,int gpos)
 {
   int idx;
-  //TODO: ASPA decide if l_best_params is needed or not
-  //if (gpos == -2)
-  //{
-  //  idx = 0;
-  //  if (!activ[idx].empty())
-  //	activ[idx].clear();
-  //  if (!sums.empty())
-  //	sums[idx].clear();
-  //  activ[idx].push_back(x);
-  //  sums[idx].push_back(x);
-  //  int count = 1;
-  //  for (int i = 0; i < numhid+1; i++)
-  //	{
-  //	  activ[idx].push_back(best_params.at(i)*activ[idx].at(count-1) + best_bias.at(i));
-  //	  sums[idx].push_back(activ[idx].at(count));
-  //	  int lent = numlayers[count];
-  //	  for (int j = 0; j < lent; j++)
-  //	    {
-  //	      if (funclayer[i] == 0)
-  //		{
-  //		  activ[idx].at(count)(j,0) = sigmoid(activ[idx].at(count)(j,0));
-  //		}
-  //	      else if (funclayer[i] == 1)
-  //		{
-  //		  activ[idx].at(count)(j,0) = tanh(activ[idx].at(count)(j,0));
-  //		}
-  //	      else if (funclayer.at(i) == 2)
-  //		{
-  //		  activ[idx].at(count)(j,0) = reclinear(activ[idx].at(count)(j,0));
-  //		}
-  //	      else
-  //		{
-  		  //cout<<activ.size();
-  //		  activ[idx].at(count)(j,0) = tanh_r(activ[idx].at(count)(j,0));
-		  //cout<<activ.at(count)(0,0)<<" After\n";
-  //		}
-  //	    }
-  //	  count++;
-  //	}
-  //  return;
-  //}
   if (gpos == -1)
     {
       idx = 0;
@@ -2588,14 +2559,11 @@ void NNet::l_feedforward(mat x,int gpos)
 	    }
 	  else
 	    {
-	      //cout<<activ.size();
 	      l_activ[idx].at(count)(j,0) = tanh_r(l_activ[idx].at(count)(j,0));
-	      //cout<<activ.at(count)(0,0)<<" After\n";
 	    }
 	}
       count++;
     }
-  //cout<<"FACT: "<<l_activ[0][2](0,0)<<endl;
   return;
 }
 
@@ -2603,7 +2571,6 @@ void NNet::l_feedforward(mat x,int gpos)
 //This is a slightly modified variant of backprop so learning latent parameters is also incorporated
 void NNet::l_backprop(mat x, mat y, int gpos)
 {
-  //cout<<"backproping"<<endl;
   int idx;
   if (gpos == -1)
     {
@@ -2613,7 +2580,6 @@ void NNet::l_backprop(mat x, mat y, int gpos)
     {
       idx = gpos;
     }
-  //paracheck[0] = 21;
   int l_numhid = l_numhids.at(idx);
   l_feedforward(x,idx);
   if(!l_grads[idx].empty())
@@ -2780,8 +2746,6 @@ void NNet::l_trainnet(int numlatent, int mode)
 	    }
 	}
     }
-  //double ttemp_rmse;
-  //int ecount = 0;
   vector<double> lrates;
   for(int i = 0; i < numfiles; i++)
     {
@@ -2792,25 +2756,11 @@ void NNet::l_trainnet(int numlatent, int mode)
     }
   if (gradd == 0)
     {
-      //int stop = 0;
-      //double beta = 0.2;
       for (int k = 0; k < epoch; k++)
 	{
 	  cout<<(double)k*100/(double)epoch<<"%\n";
 	  for (int i = 0; i < train; i++)
 	    {
-	      //cout<<train;
-	      //if (classreg == 0)
-	      //{
-	      //  for (int j = 0; j < numfiles; j++)
-	      //    {
-	      //      for (int l = 0; l < numhid + 1; l++)
-	      //	{
-	      //	  l_params[j].at(l) = l_params[j].at(l) + beta*l_velocity[j].at(l);
-	      //	}
-	      //    }
-	      //}
-	      //backprop(xdata[i],ydata[i],-1);
 	      int threadcount = 0;
 	      for (int j = 0; j < numfiles; j++)
 		{
@@ -2881,19 +2831,12 @@ void NNet::l_trainnet(int numlatent, int mode)
 		    }
 		}
 	    }
-	  //if (k > 500.0/2.0)
-	  //{
-	  //  beta = 0.9;
-	  //}
 	  for(int t = 0; t < numfiles; t++)
 	    {
 	      int lnumhid = l_numhids[t];
 	      for (int l = 0; l < lnumhid + 1; l++)
 		{
-		  //cout<<velocity.at(i)<<"\n";
-		  //velocity.at(l) = beta*velocity.at(l) - (lrate/(double)train)*tgrads.at(l);
 		  l_params[t][l] = params[t][l] - (lrates[t]/(double)train)*tgrads[t][l] - 0.00001*params[t][l];
-		  //params.at(l) = params.at(l) + velocity.at(l);
 		  l_bias[t][l] = l_bias[t][l] - (lrates[t]/(double)train)*l_tdels[t][l];
 		}
 	    }
@@ -2903,18 +2846,12 @@ void NNet::l_trainnet(int numlatent, int mode)
   else if (gradd == 1)
     {
       cout<<"Initializing Stochastic Gradient Descent L\n";
-      //min_rmse = -1;
       vector<int> idxs;
       for (int i = 0; i < l_train; i++)
 	{
 	  idxs.push_back(i);
 	}
       random_shuffle(idxs.begin(),idxs.end());
-      //double beta;
-      //if (classreg == 0)
-      //{
-      //  beta = 0.2;
-      //}
       for (int i = 0; i < epoch; i++)
 	{
 	  cout<<((double)i/(double)epoch)*100<<"%\n";
@@ -2941,12 +2878,10 @@ void NNet::l_trainnet(int numlatent, int mode)
 		  int threadcount = 0;
 		  for (int t = 0; t < numfiles; t++)
 		    {
-		      //cout<<"Q-val: "<<Q_mat[idxs.at(k)][t]<<endl;
 		      if(qmat == 1)
 			{
 			  if (Q_mat[idxs.at(k)][t] == 1)
 			    {
-			      //backprop(xdata.at(idxs.at(k+t)),ydata.at(idxs.at(k+t)),-1);
 			      l_bpthreads.push_back(thread(&NNet::l_parallelbp,this,idxs.at(k),t));
 			      threadcount++;
 			    }
@@ -3010,14 +2945,6 @@ void NNet::l_trainnet(int numlatent, int mode)
 			}
 		    }
 		}
-	      //if (classreg == 0)
-	      //{
-	      //  for (int yt = 0; yt < numhid + 1; yt++)
-	      //    {
-	      //      l_params.at(yt) = l_params.at(yt) - beta*l_velocity.at(yt);
-	      //      l_velocity.at(yt) = beta*l_velocity.at(yt) - (lrate/(double)1000.0)*tgrads.at(yt);
-	      //    }
-	      //}
 	      double kappa = 0.001;
 	      for(int q = 0; q < numfiles; q++)
 		{
@@ -3038,10 +2965,6 @@ void NNet::l_trainnet(int numlatent, int mode)
 			  l_params[q].at(j) = l_params[q].at(j) - (lrates[q]/(double)100.0)*l_tgrads[q].at(j) - kappa*l_params[q].at(j);
 			  //l_tgrads[q].at(j).fill(0); //Doing this is the textbook method but commenting this out just works much much better
 			}
-		  //else
-		  //{
-		  //  l_params.at(j) = l_params.at(j) + l_velocity.at(j) - kappa*l_params.at(j);
-		  //}
 		      l_bias[q].at(j) = l_bias[q].at(j) - (lrates[q]/(double)100.0)*l_tdels[q].at(j+1);
 		      //l_tdels[q].at(j+1).fill(0);    //Doing this is the textbook method but commenting this out just works much much better
 		    }
