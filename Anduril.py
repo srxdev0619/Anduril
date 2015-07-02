@@ -1,8 +1,12 @@
 from NNet import *
 
 class Anduril():
-    def __init__(self,sconfig,classreg = 0, numcores = 1, gradd = 0, costfunc = 0, epoch = 1):
+
+    def __init__(self):
         self.Net = NNet()
+        return 
+    
+    def init(self,sconfig,classreg = 0, numcores = 1, gradd = 0, costfunc = 0, epoch = 1):
         self.Net.init(sconfig,classreg,numcores,gradd,costfunc,epoch)
 
     def func_arch(self,flayer):
@@ -74,7 +78,7 @@ class Anduril():
         return
 
     def ls_init(self,nconfig,classreg = 0,gradd = 0, costfunc = 0, epoch = 1):
-        if (type(numfiles) == str) and (type(classreg) == int) and (type(gradd) == int) and (type(costfunc) == int) and (type(epoch) == int):
+        if (type(nconfig) == str) and (type(classreg) == int) and (type(gradd) == int) and (type(costfunc) == int) and (type(epoch) == int):
             self.Net.ls_init(nconfig,classreg,gradd,costfunc,epoch)
             return
         else:
@@ -84,7 +88,7 @@ class Anduril():
 
     def ls_load(self,outputfiles, Qmatrix = " ", mode = 0, input_file = " ", sep1 = ","):
         if (type(outputfiles) == str) and (type(Qmatrix) == str) and (type(mode) == int) and (type(input_file) == str) and (type(sep1) == str):
-            self.Net.ls_load(Qmatrix,mode,input_file,sep1)
+            self.Net.ls_load(outputfiles,Qmatrix,mode,input_file,sep1)
             return
         else:
             print "Invalid input!"
@@ -99,7 +103,7 @@ class Anduril():
             return
 
     def l_init(self,numfiles,classreg = 0,gradd = 0, costfunc = 0, epoch = 1):
-        if (type(numfiles) == str) and (type(classreg) == int) and (type(gradd) == int) and (type(costfunc) == int) and (type(epoch) == int):
+        if (type(numfiles) == int) and (type(classreg) == int) and (type(gradd) == int) and (type(costfunc) == int) and (type(epoch) == int):
             self.Net.l_init(numfiles,classreg,1,gradd,costfunc,epoch)
             return
         else:
@@ -129,7 +133,7 @@ class Anduril():
 
         
     def l_trainrprop(self,numlatent,tmax = 15.0,mode = 0):
-        if (type(numlatent) == int) and (type(tmax) == int) and (type(mode) == int):
+        if (type(numlatent) == int) and (type(tmax) == float) and (type(mode) == int):
             self.Net.l_trainrprop(numlatent,tmax,mode)
             return
         else:
