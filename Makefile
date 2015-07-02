@@ -12,7 +12,7 @@ $(TARGET).so: $(TARGET).o
 	$(CC) -shared -Wl,--export-dynamic $(TARGET).o -L$(BOOST_LIB) -lboost_python-py27 -L/usr/lib/python$(PYTHON_VERSION)/config -lpython$(PYTHON_VERSION) -o $(TARGET).so -larmadillo 
 
 $(TARGET).o: $(TARGET).cpp
-	$(CC) $(CFLAGS) -I$(PYTHON_INCLUDE) -I$(BOOST_INC) -fPIC -c $(TARGET).cpp -larmadillo
+	$(CC) $(CFLAGS) -I$(PYTHON_INCLUDE) -I$(BOOST_INC) -O3 -fPIC -c $(TARGET).cpp -larmadillo
 
 
 clean:
