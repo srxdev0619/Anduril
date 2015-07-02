@@ -3738,7 +3738,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
       random_shuffle(idxs.begin(),idxs.end());
       for (int i = 0; i < epoch; i++)
 	{
-	  cout<<((double)i/(double)epoch)*100<<"%\n";
+	  cout<<((double)i/(double)epoch)*100<<"%"<<endl;
 	  if (trainmode == 1)
 	    {
 	      l_testall();
