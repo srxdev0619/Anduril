@@ -1897,6 +1897,7 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
   if (fcount != numfiles)
     {
       cout<<"Incorrect number of files given!"<<endl;
+      filenames.clear();
       return;
     }
   for (int i = 0; i < numfiles; i++)
@@ -1934,8 +1935,11 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
 	  string num = "";
 	  if((tempcount != county) && (tempcount != 0))
 	    {
-	      cout<<temp;
+	      //cout<<temp;
 	      cout<<"Change in length of output!\n";
+	       l_params.clear();
+	       l_bias.clear();
+	       l_yvals.clear();
 	      return;
 	    }
 	  tempcount = county;
