@@ -304,7 +304,9 @@ void NNet::load(string filename,int imode, string sep1, string sep2)
   else
     {
       cout<<"Please enter a value of 0 or 1 for loadmode\n";
-      abort();
+      xdata.clear();
+      ydata.clear();
+      return;
     }
   numdata = numlines;
   numlayers.push_back(pcountx);
@@ -1262,7 +1264,7 @@ void NNet::test_net(int testmode, int verbose)
    else
      {
        cout<<"Testmode can only be 0 or 1!"<<endl;
-       abort();
+       return;
      }
   int passed = 0;
   int error = 0;
@@ -1518,7 +1520,6 @@ void NNet::loadnet(string netname)
 	  if ((stat1 != true) || (stat2 != true))
 	    {
 	      cout<<"Load failed!\n";
-	      abort();
 	      return;
 	    }
 	}
@@ -1744,8 +1745,8 @@ void NNet::ls_init(string nconfig, int iclassreg, int igradd, int icostfunc, int
       string septr = "-";
       if ((nconfig[i] != cmm[0]) && (nconfig.at(i) != septr[0]) && (isdigit(nconfig.at(i)) == 0))
 	{
-	  cout<<"Invalid configuration!"<<endl;
-	  abort();
+	  cout<<"Invalid configuration!, net not initialized"<<endl;
+	  return;
 	}
       else if (nconfig[i] == cmm[0])
 	{
@@ -1896,7 +1897,7 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
   if (fcount != numfiles)
     {
       cout<<"Incorrect number of files given!"<<endl;
-      abort();
+      return;
     }
   for (int i = 0; i < numfiles; i++)
     {
@@ -1916,6 +1917,9 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
       if (!ldata.is_open())
 	{
 	  cout<<"Error opening file!\n";
+	  l_params.clear();
+	  l_bias.clear();
+	  l_yvals.clear();
 	  return;
 	}
       string temp;
@@ -1932,7 +1936,6 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
 	    {
 	      cout<<temp;
 	      cout<<"Change in length of output!\n";
-	      abort();
 	      return;
 	    }
 	  tempcount = county;
@@ -1984,7 +1987,10 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
       if (!qdata.is_open())
 	{
 	  cout<<"Error opening file!\n";
-	  abort();
+	  filenames.clear();
+	  l_yvals.clear();
+	  l_params.clear();
+	  l_bias.clear();
 	  return;
 	}
       string temp;
@@ -1999,7 +2005,10 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
 	    {
 	      cout<<temp;
 	      cout<<"Change in length of output!\n";
-	      abort();
+	      filenames.clear();
+	      l_yvals.clear();
+	      l_params.clear();
+	      l_bias.clear();
 	      return;
 	    }
 	  qtempcount = qcounty;
@@ -2053,7 +2062,11 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
 	  if ((tempcx != countx) && (tempcx != 0))
 	    {
 	      cout<<"Change in length of input!"<<endl;
-	      abort();
+	      filenames.clear();
+	      Q_mat.clear();
+	      l_yvals.clear();
+	      l_params.clear();
+	      l_bias.clear();
 	      return;
 	    }
 	  tempcx = countx;
@@ -2066,7 +2079,12 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
 		{
 		  //cout<<temp.at(i)<<endl;
 		  cout << "Invalid file format!\n";
-		  abort();
+		   filenames.clear();
+		   Q_mat.clear();
+		   l_yvals.clear();
+		   l_params.clear();
+		   l_bias.clear();
+		   l_xvals.clear();
 		  return;
 		}
 	      if (((i < (lent-1))) && ((temp.at(i) == decp.at(0)) || (temp.at(i) == minussb.at(0)) || (isdigit(temp.at(i)) != 0)))
@@ -2095,7 +2113,12 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
       if (xnumlines != qnumlines)
 	{
 	  cout<<"Missing Q-matrix entries for certain data points!"<<endl;
-	  abort();
+	   filenames.clear();
+	   Q_mat.clear();
+	   l_yvals.clear();
+	   l_params.clear();
+	   l_bias.clear();
+	   l_xvals.clear();
 	  return;
 	}
       l_numx = countx;
@@ -2267,7 +2290,10 @@ void NNet::l_load(string Qmatrix, int lmode, string input_file, string sep1)
       if (!ldata.is_open())
 	{
 	  cout<<"Error opening file!\n";
-	  abort();
+	  filenames.clear();
+	  l_params.clear();
+	  l_bias.clear();
+	  l_yvals.clear();
 	  return;
 	}
       string temp;
@@ -2284,7 +2310,10 @@ void NNet::l_load(string Qmatrix, int lmode, string input_file, string sep1)
 	    {
 	      cout<<temp;
 	      cout<<"Change in length of output!\n";
-	      abort();
+	      filenames.clear();
+	      l_params.clear();
+	      l_bias.clear();
+	      l_yvals.clear();
 	      return;
 	    }
 	  tempcount = county;
@@ -2336,7 +2365,10 @@ void NNet::l_load(string Qmatrix, int lmode, string input_file, string sep1)
       if (!qdata.is_open())
 	{
 	  cout<<"Error opening file!\n";
-	  abort();
+	  filenames.clear();
+	  l_params.clear();
+	  l_bias.clear();
+	  l_yvals.clear();
 	  return;
 	}
       string temp;
@@ -2351,7 +2383,11 @@ void NNet::l_load(string Qmatrix, int lmode, string input_file, string sep1)
 	    {
 	      cout<<temp;
 	      cout<<"Change in length of output!\n";
-	      abort();
+	      filenames.clear();
+	      l_params.clear();
+	      l_bias.clear();
+	      l_yvals.clear();
+	      Q_mat.clear();
 	      return;
 	    }
 	  qtempcount = qcounty;
@@ -2405,7 +2441,12 @@ void NNet::l_load(string Qmatrix, int lmode, string input_file, string sep1)
 	  if ((tempcx != countx) && (tempcx != 0))
 	    {
 	      cout<<"Change in length of input!"<<endl;
-	      abort();
+	      filenames.clear();
+	      l_params.clear();
+	      l_bias.clear();
+	      l_yvals.clear();
+	      Q_mat.clear();
+	      l_xvals.clear();
 	      return;
 	    }
 	  tempcx = countx;
@@ -2418,7 +2459,12 @@ void NNet::l_load(string Qmatrix, int lmode, string input_file, string sep1)
 		{
 		  //cout<<temp.at(i)<<endl;
 		  cout << "Invalid file format!\n";
-		  abort();
+		   filenames.clear();
+		   l_params.clear();
+		   l_bias.clear();
+		   l_yvals.clear();
+		   Q_mat.clear();
+		   l_xvals.clear();
 		  return;
 		}
 	      if (((i < (lent-1))) && ((temp.at(i) == decp.at(0)) || (temp.at(i) == minussb.at(0)) || (isdigit(temp.at(i)) != 0)))
@@ -2447,7 +2493,12 @@ void NNet::l_load(string Qmatrix, int lmode, string input_file, string sep1)
       if (xnumlines != qnumlines)
 	{
 	  cout<<"Missing Q-matrix entries for certain data points!"<<endl;
-	  abort();
+	  filenames.clear();
+	  l_params.clear();
+	  l_bias.clear();
+	  l_yvals.clear();
+	  Q_mat.clear();
+	  l_xvals.clear();
 	  return;
 	}
       l_numx = countx;
@@ -4124,7 +4175,8 @@ void NNet::l_funcarch(void)
 	      if (isdigit(temp[j]) == 0)
 		{
 		  cout<<"Invalid input!"<<endl;
-		  abort();
+		  l_funclayer.clear();
+		  return;
 		}
 	      else
 		{
@@ -4138,7 +4190,7 @@ void NNet::l_funcarch(void)
   else
     {
       cout<<"Please initialize the neural network!"<<endl;
-      abort();
+      return;
     }
   return;
 }
