@@ -77,6 +77,7 @@ class Anduril():
         self.Net.snets()
         return
 
+    
     def ls_init(self,nconfig,classreg = 0,gradd = 0, costfunc = 0, epoch = 1):
         if (type(nconfig) == str) and (type(classreg) == int) and (type(gradd) == int) and (type(costfunc) == int) and (type(epoch) == int):
             self.Net.ls_init(nconfig,classreg,gradd,costfunc,epoch)

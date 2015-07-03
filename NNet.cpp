@@ -573,7 +573,7 @@ void NNet::train_net(double lrate, int mode, int verbose)
       double beta = 0.2;
       for (int k = 0; k < epoch; k++)
 	{
-	  cout<<(double)k*100/(double)epoch<<"%\n";
+	  cout<<"\r"<<(double)k*100/(double)epoch<<"%\n";
 	  for (int i = 0; i < train; i++)
 	    {
 	      for (int l = 0; l < numhid + 1; l++)
@@ -619,7 +619,14 @@ void NNet::train_net(double lrate, int mode, int verbose)
 	}
       for (int i = 0; i < epoch; i++)
 	{
-	  cout<<((double)i/(double)epoch)*100<<"%\n";
+	  if (verbose == 0)
+	    {
+	      cout<<"\r"<<((double)i/(double)epoch)*100<<"%"<<flush;
+	    }
+	  else
+	    {
+	      cout<<((double)i/(double)epoch)*100<<"%\n";
+	    }
 	  int step = 0;
 	  if (classreg == 0)
 	    {
@@ -820,7 +827,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
     {
       for (int k = 0; k < epoch; k++)
 	{
-	  cout<<(double)k*100/(double)epoch<<"%\n";
+	  cout<<"\r"<<(double)k*100/(double)epoch<<"%\n";
 	  for (int i = 0; i < train; i++)
 	    {
 	      for (int t = 0; t < numcores; t++)
@@ -1015,7 +1022,14 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
       random_shuffle(idxs.begin(),idxs.end());
       for (int i = 0; i < epoch; i++)
 	{
-	  cout<<((double)i/(double)epoch)*100<<"%\n";
+	  if (verbose == 0)
+	    {
+	      cout<<"\r"<<((double)i/(double)epoch)*100<<"%"<<flush;
+	    }
+	  else
+	    {
+	      cout<<((double)i/(double)epoch)*100<<"%"<<endl;
+	    }
 	  int step = 0;
 	  while (step < train)
 	    {
@@ -2851,7 +2865,16 @@ void NNet::l_trainnet(int numlatent, int mode)
     {
       for (int k = 0; k < epoch; k++)
 	{
-	  cout<<(double)k*100/(double)epoch<<"%\n";
+	  if (trainmode == 0)
+	    {
+	      cout<<"\r"<<((double)k/(double)epoch)*100<<"%"<<flush;
+	    }
+	  if (trainmode == 1)
+	    {
+	      cout<<((double)k/(double)epoch)*100<<"%\n";
+	      l_testall();
+	      cout<<endl;
+	    }
 	  for (int i = 0; i < train; i++)
 	    {
 	      int threadcount = 0;
@@ -2947,7 +2970,16 @@ void NNet::l_trainnet(int numlatent, int mode)
       random_shuffle(idxs.begin(),idxs.end());
       for (int i = 0; i < epoch; i++)
 	{
-	  cout<<((double)i/(double)epoch)*100<<"%\n";
+	  if (trainmode == 0)
+	    {
+	      cout<<"\r"<<((double)i/(double)epoch)*100<<"%"<<flush;
+	    }
+	  if (trainmode == 1)
+	    {
+	      cout<<((double)i/(double)epoch)*100<<"%\n";
+	      l_testall();
+	      cout<<endl;
+	    }
 	  if (trainmode == 1)
 	    {
 	      l_testall();
@@ -3861,7 +3893,8 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
     }
   else if (gradd == 1)
     {
-      cout<<"Initializing Stochastic Gradient Descent L\n";
+      cout<<"Initializing Stochastic Gradient Descent"<<endl;
+      double pc = 0;
       vector<int> idxs;
       for (int i = 0; i < l_train; i++)
 	{
@@ -3870,9 +3903,14 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
       random_shuffle(idxs.begin(),idxs.end());
       for (int i = 0; i < epoch; i++)
 	{
-	  cout<<((double)i/(double)epoch)*100<<"%"<<endl;
+	  if (trainmode == 0)
+	    {
+	      pc = ((double)i/(double)epoch)*100;
+	      cout<<"\r"<<pc<<"%"<<flush;
+	    }
 	  if (trainmode == 1)
 	    {
+	      cout<<((double)i/(double)epoch)*100<<"%"<<endl;
 	      l_testall();
 	      cout<<endl;
 	    }
