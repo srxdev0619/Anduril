@@ -143,6 +143,8 @@ void NNet::init(string sconfig, int iclassreg, int inumcores, int igradd, int ic
       cout<<"Invalid configuration\nPlease choose the number of epochs to be trained";
       return;
     }
+  if (!funclayer.empty())
+    funclayer.clear();
   for (int i = 0; i < count + 1; i++)
     {
       if (classreg == 0)
@@ -155,6 +157,13 @@ void NNet::init(string sconfig, int iclassreg, int inumcores, int igradd, int ic
 	}
     }
   numhid = count;
+  if (!activ.empty())
+    {
+      activ.clear();
+      sums.clear();
+      grads.clear();
+      dels.clear();
+    }
   vector<mat> tr;
   for (int i = 0; i < numcores; i++)
     {
@@ -227,6 +236,11 @@ void NNet::load(string filename,int imode, string sep1, string sep2)
   int numlines = 0;
   string decp = ".";
   string minussb = "-";
+  if (!xdata.empty())
+    {
+      xdata.clear();
+      ydata.clear();
+    }
   //parse file input
   while (getline(ldata,temp))
     {
@@ -309,6 +323,8 @@ void NNet::load(string filename,int imode, string sep1, string sep2)
       return;
     }
   numdata = numlines;
+  if (!numlayers.empty())
+    numlayers.clear();
   numlayers.push_back(pcountx);
   for (int i = 0; i < numhid; i++)
     {
@@ -316,6 +332,14 @@ void NNet::load(string filename,int imode, string sep1, string sep2)
     }
   numlayers.push_back(pcounty);
   //initializing parameter, bias and velocities
+  if (!params.empty())
+    {
+      params.clear();
+      velocity.clear();
+      tgrads.clear();
+      bias.clear();
+      tdels.clear();
+    }
   for (int i = 0; i < numhid + 1; i++)
     {
       int rows = numlayers[i+1];
@@ -1824,6 +1848,10 @@ void NNet::ls_init(string nconfig, int iclassreg, int igradd, int icostfunc, int
       cout<<"Invalid configuration\nPlease choose the number of epochs to be trained";
       return;
     }
+  if (!l_funclayer.empty())
+    {
+      l_funclayer.clear();
+    }
   for (int j = 0; j < numfiles; j++)
     {
       vector<int> tr;
@@ -1840,6 +1868,17 @@ void NNet::ls_init(string nconfig, int iclassreg, int igradd, int icostfunc, int
 	      l_funclayer[j].push_back(3);
 	    }
 	}
+    }
+  if (!l_activ.empty())
+    {
+      l_activ.clear();
+      l_sums.clear();
+      l_grads.clear();
+      l_dels.clear();
+      l_tgrads.clear();
+      l_tdels.clear();
+      l_checkgrads.clear();
+      l_checkdels.clear();
     }
   vector<mat> tr;
   l_dels.push_back(tr);
@@ -1903,6 +1942,12 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
       cout<<"Incorrect number of files given!"<<endl;
       filenames.clear();
       return;
+    }
+  if (!l_params.empty())
+    {
+      l_params.clear();
+      l_bias.clear();
+      l_yvals.clear();
     }
   for (int i = 0; i < numfiles; i++)
     {
@@ -1983,7 +2028,11 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
       ldata.close();
     }
   file_nlines = numlines;
-  
+  if (!l_xvals.empty())
+    {
+      l_xvals.clear();
+      Q_mat.clear();
+    }
   //LOADING INPUT FILE
   if (input_file.at(0) != empt.at(0))
     {
@@ -2029,6 +2078,7 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
 		  l_yvals.clear();
 		  l_params.clear();
 		  l_bias.clear();
+		  Q_mat.clear();
 		  return;
 		}
 	      if (((i < (lent-1))) && ((temp.at(i) == decp.at(0)) || (temp.at(i) == minussb.at(0)) || (isdigit(temp.at(i)) != 0)))
@@ -2146,6 +2196,12 @@ void NNet::ls_load(string outputfiles, string Qmatrix, int lmode, string input_f
   else
     {
       cout<<"Loading configuration can only be 1 or 0"<<endl;
+      filenames.clear();
+      Q_mat.clear();
+      l_yvals.clear();
+      l_params.clear();
+      l_bias.clear();
+      l_xvals.clear();
     }
   return;
 }
@@ -2220,6 +2276,10 @@ void NNet::l_init(int num_files, int iclassreg, int inumcores, int igradd, int i
       cout<<"Invalid configuration\nPlease choose the number of epochs to be trained";
       return;
     }
+  if (!l_funclayer.empty())
+    {
+      l_funclayer.clear();
+    }
   for (int j = 0; j < numfiles; j++)
     {
       vector<int> tr;
@@ -2236,6 +2296,17 @@ void NNet::l_init(int num_files, int iclassreg, int inumcores, int igradd, int i
 	      l_funclayer[j].push_back(3);
 	    }
 	}
+    }
+  if (!l_activ.empty())
+    {
+      l_activ.clear();
+      l_sums.clear();
+      l_grads.clear();
+      l_dels.clear();
+      l_tgrads.clear();
+      l_tdels.clear();
+      l_checkgrads.clear();
+      l_checkdels.clear();
     }
   vector<mat> tr;
   l_dels.push_back(tr);
@@ -2272,6 +2343,12 @@ void NNet::l_load(string Qmatrix, int lmode, string input_file, string sep1)
     }
   cout<<"Please enter the names of the files."<<endl;
   //LOADING OUTPUT FILES
+  if (!l_params.empty())
+    {
+      l_params.clear();
+      l_bias.clear();
+      l_yvals.clear();
+    }
   for (int i = 0; i < numfiles; i++)
     {
       cout<<"File "<<to_string(i + 1)<<": ";
@@ -2357,7 +2434,11 @@ void NNet::l_load(string Qmatrix, int lmode, string input_file, string sep1)
       ldata.close();
     }
   file_nlines = numlines;
-  
+  if (!l_xvals.empty())
+    {
+      l_xvals.clear();
+      Q_mat.clear();
+    }
   //LOADING INPUT FILE
   if (input_file.at(0) != empt.at(0))
     {
@@ -2430,6 +2511,11 @@ void NNet::l_load(string Qmatrix, int lmode, string input_file, string sep1)
       if (!ldata.is_open())
 	{
 	  cout<<"Error opening file!\n";
+	  filenames.clear();
+	  Q_mat.clear();
+	  l_yvals.clear();
+	  l_params.clear();
+	  l_bias.clear();
 	  return;
 	}
       int xnumlines = 0;
