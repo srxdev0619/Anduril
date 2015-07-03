@@ -38,6 +38,7 @@ class NNet
   void l_trainnet(int numlatent, int mode = 0);
   //void l_testnet(string filename, string netname);
   void l_savenet(void);
+  void ls_savenet(string names, string in_name);
   void test_data(string in_filename, string out_filename, string netname, string sep = ",");
   void l_trainrprop(int numlatent,double tmax = 1.0, int mode = 0);
   void testvoids(int mode);
@@ -185,7 +186,7 @@ BOOST_PYTHON_MODULE(NNet)
     .def("loadnet",&NNet::loadnet)
     .def("snets",&NNet::snets)
     .def("l_savenet",&NNet::l_savenet)
-    //.def("l_testnet",&NNet::l_testnet)
+    .def("ls_savenet",&NNet::ls_savenet)
     .def("l_load",&NNet::l_load,NNet_overloads5())
     .def("l_init",&NNet::l_init,NNet_overloads6())
     .def("l_trainnet", &NNet::l_trainnet,NNet_overloads7())

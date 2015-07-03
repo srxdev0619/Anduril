@@ -1395,21 +1395,23 @@ void NNet::savenet(string netname)
   string no = "no";
   string stp = "*";
   int check = 0;
+  int inc;
   vector<string> names;
   while(getline(savednets,temp))
     {
-      int lent1 = temp.length();
-      int lent2 = netname.length();
-      for (int i = 0; (temp.at(i) != stp.at(0)) && (i < lent1) && (i < lent2); i++)
+      inc = 1;
+      string tempname = "";
+      for (int i = 0; (temp.at(i) != stp.at(0)); i++)
 	{
-	  if (temp.at(i) == netname.at(i))
-	    {
-	      check = 1;
-	    }
-	  else
-	    {
-	      check = 0;
-	    }
+	  tempname = tempname + temp[i];
+	}
+      if (netname == tempname)
+	{
+	  check = 1;
+	}
+      else
+	{
+	  check = 0;
 	}
       if (check == 1)
 	{
@@ -1432,7 +1434,7 @@ void NNet::savenet(string netname)
 	  while(((ans.at(0) != yes.at(0)) || ans.at(0) == no.at(0)) && (ans.length() != 1));
 	  if (ans.at(0) == yes.at(0))
 	    {
-	      break;
+	      inc = 0;
 	    }
 	  else
 	    {
@@ -1440,7 +1442,7 @@ void NNet::savenet(string netname)
 	      return;
 	    }
 	}
-      else
+      if (inc == 1)
 	{
 	   names.push_back(temp);
 	}
@@ -3008,21 +3010,23 @@ void NNet::lsavenets(string netname, int index)
   string no = "no";
   string stp = "*";
   int check = 0;
+  int inc;
   vector<string> names;
   while(getline(savednets,temp))
     {
-      int lent1 = temp.length();
-      int lent2 = netname.length();
-      for (int i = 0; (temp.at(i) != stp.at(0)) && (i < lent1) && (i < lent2); i++)
+      inc = 1;
+      string tempname = "";
+      for (int i = 0; (temp.at(i) != stp.at(0)); i++)
 	{
-	  if (temp.at(i) == netname.at(i))
-	    {
-	      check = 1;
-	    }
-	  else
-	    {
-	      check = 0;
-	    }
+	  tempname = tempname + temp[i];
+	}
+      if (netname == tempname)
+	{
+	  check = 1;
+	}
+      else
+	{
+	  check = 0;
 	}
       if (check == 1)
 	{
@@ -3045,7 +3049,7 @@ void NNet::lsavenets(string netname, int index)
 	  while(((ans.at(0) != yes.at(0)) || ans.at(0) == no.at(0)) && (ans.length() != 1));
 	  if (ans.at(0) == yes.at(0))
 	    {
-	      break;
+	      inc = 0;
 	    }
 	  else
 	    {
@@ -3053,7 +3057,7 @@ void NNet::lsavenets(string netname, int index)
 	      return;
 	    }
 	}
-      else
+      if (inc == 1)
 	{
 	   names.push_back(temp);
 	}
@@ -3143,6 +3147,87 @@ void NNet::l_savenet(void)
   saveinput.close();
   return;
 }
+
+
+void NNet::ls_savenet(string names, string in_name)
+{
+  vector<string> netnames;
+  int nlent = names.length();
+  string num = "";
+  for (int i = 0; i < nlent; i++)
+    {
+      string cmm = ",";
+      if (names[i] == cmm[0])
+	{
+	  netnames.push_back(num);
+	  num = "";
+	}
+      else if (i == (nlent -1))
+	{
+	  num = num + names[i];
+	  netnames.push_back(num);
+	  num = "";
+	}
+      else
+	{
+	  num = num + names[i];
+	}
+    }
+  for(int i = 0; i < numfiles; i++)
+    {
+      lsavenets(netnames.at(i),i);
+    }
+  string input_name = in_name;
+  string ans = "y";
+  fstream saveinput;
+  string yes = "y";
+  string no = "n";
+  saveinput.open(input_name,fstream::in);
+  int chkopen = 0;
+  if (saveinput.is_open())
+    {
+      chkopen = 1;
+    }
+  else
+    {
+      chkopen = 0;
+    }
+  saveinput.close();
+  if (chkopen == 1)
+    {
+      do
+	{
+	  cout<<input_name<<" already exists, overwrite ? (y or n) : ";
+	  cin>>ans;
+	}
+      while(((ans.at(0) != yes.at(0)) || (ans.at(0) != no.at(0))) && (ans.length() != 1));
+    }
+  if(ans.at(0) != yes.at(0))
+    {
+      cout<<"Save aborted!\n";
+      return;
+    }
+  else
+    {
+      saveinput.open(input_name,fstream::out);
+      for(int i = 0; i < file_nlines; i++)
+	{
+	  for(int j = 0; j < l_numx; j++)
+	    {
+	      saveinput<<l_xvals[i](j,0);
+	      if (j < l_numx - 1)
+		{
+		  saveinput<<",";
+		}
+	    }
+	  saveinput<<endl;
+	}
+    }
+  saveinput.close();
+  return;
+}
+
+
 
 
 //This methods loads a file to be tested against another file with the given parameters
