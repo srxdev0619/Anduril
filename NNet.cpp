@@ -790,6 +790,7 @@ void NNet::train_net(double lrate, int mode, int verbose)
 	    }
 	}
     }
+  cout<<endl;
   return;
 }
 
@@ -1290,6 +1291,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 	    }
 	}
     }
+  cout<<endl;
   return;
 }
 
@@ -3098,6 +3100,7 @@ void NNet::l_trainnet(int numlatent, int mode)
 	}
     }
   l_trained++;
+  cout<<endl;
   return;
 }
 
@@ -4257,6 +4260,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 	}
     }
   l_trained++;
+  cout<<endl;
   return;
 }
 
