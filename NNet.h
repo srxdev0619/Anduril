@@ -43,14 +43,12 @@ class NNet
   void l_trainrprop(int numlatent,double tmax = 1.0, int mode = 0);
   void testvoids(int mode);
   void l_funcarch(void);
-  //DEBUG METHODS!!//
-  //mat* feed_forward(mat x);
  private:
   //Variables
   // stores the architecture of hidden layers in a array
   int trained;
   int l_trained;
-  vector<int> config
+  vector<int> config;
   int classreg;
   int numcores;
   int func;
