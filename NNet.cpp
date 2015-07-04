@@ -1920,6 +1920,7 @@ void NNet::ls_init(string nconfig, int iclassreg, int igradd, int icostfunc, int
       l_checkdels.push_back(tr);
     }
   checkinit = 0;
+  l_trained = 0;
   return;
 }
 
@@ -2348,6 +2349,7 @@ void NNet::l_init(int num_files, int iclassreg, int inumcores, int igradd, int i
       l_checkdels.push_back(tr);
     }
   checkinit = 0;
+  l_trained = 0;
   return;
 }
 
