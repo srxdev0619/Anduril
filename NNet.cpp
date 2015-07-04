@@ -25,7 +25,7 @@ NNet::NNet()
   pcountx = -1;
   pcounty = -1;
   checkinit = -1;
-  config = NULL;
+  //config = NULL;
   temp_rmse = 10000;
   min_rmse = -1;
   qmat = 0;
@@ -99,6 +99,10 @@ void NNet::init(string sconfig, int iclassreg, int inumcores, int igradd, int ic
   int count = 0;
   int lent = sconfig.length();
   string num = "";
+  if (!config.empty())
+    {
+      config.clear();
+    }
   //parses sconfig
   for (int i = 0; i < lent; i++)
     {
@@ -113,16 +117,14 @@ void NNet::init(string sconfig, int iclassreg, int inumcores, int igradd, int ic
 	}
       else if (sconfig.at(i) == '-')
 	{
-	  config = (int *)realloc(config,(count + 1)*sizeof(int));
-	  config[count] = stoi(num,NULL);
+	  config.push_back(stoi(num,NULL));
 	  count++;
 	  num = "";
 	}
       else if ((i == lent - 1) && (sconfig.at(i) != '-'))
 	{
 	  num = num + sconfig.at(i);
-	  config = (int *)realloc(config,(count + 1)*sizeof(int));
-	  config[count] = stoi(num,NULL);
+	  config.push_back(stoi(num,NULL));
 	  count++;
 	}
     }
@@ -1758,7 +1760,9 @@ void NNet::test_file(string filename,int verbose,int ffmode, string sep1, string
       temp_rmse = RMSE;
       if (verbose == 1)
 	{
+	  double averror =  (sqrt(error)/(double)numlines);
 	  cout<<"RMSE: "<<RMSE<<endl;
+	  cout<<"Average error: "<<averror<<endl;
 	}
     }
   else
@@ -4384,4 +4388,3 @@ void NNet::l_testall(void)
 	}
     }
 }
-

@@ -50,7 +50,7 @@ class NNet
   // stores the architecture of hidden layers in a array
   int trained;
   int l_trained;
-  int *config;
+  vector<int> config
   int classreg;
   int numcores;
   int func;
