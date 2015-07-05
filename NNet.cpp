@@ -25,7 +25,6 @@ NNet::NNet()
   pcountx = -1;
   pcounty = -1;
   checkinit = -1;
-  //config = NULL;
   temp_rmse = 10000;
   min_rmse = -1;
   qmat = 0;
