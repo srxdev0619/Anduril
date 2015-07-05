@@ -92,6 +92,11 @@ double NNet::softplus(double x)
 }
 
 
+double NNet::softplus_D(double x)
+{
+  return exp(x)/(1 + exp(x));
+}
+
 
 //Initilization method, sets up the type and architecture of neural network to be used
 void NNet::init(string sconfig, int iclassreg, int inumcores, int igradd, int icostfunc, int iepoch)
