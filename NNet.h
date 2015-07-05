@@ -136,6 +136,7 @@ class NNet
   double tanh_dr(double x);
   double softplus(double x);
   double rec_D(double x);
+  double softplus_D(double x);
   //Stores files
  
   int loadmode;
