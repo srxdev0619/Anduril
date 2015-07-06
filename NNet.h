@@ -20,7 +20,7 @@ class NNet
   void func_arch(string flayer);
   //Load data
   void load(string filename,int imode = 0, string sep1 = ",", string sep2 = " ");
-  void test_file(string filename,int verbose = 0,string netname = " ", string sep1 = ",", string sep2 = " ");
+  void test_file(string filename,int verbose = 0,string netname = " ",string sep1 = ",", string sep2 = " ");
   //Train the Nerual Network
   void train_net(double lrate,int mode = 0, int verbose = 0);
   void train_rprop(int mode = 0,int verbose = 0, double tmax = 15.0);
@@ -67,6 +67,7 @@ class NNet
   void l_parallelbp(int index, int pos);
   void lsavenets(string netname,int index);
   void l_testall(void);
+  void testfile(string filename,int verbose = 0,int ffmode = -1, string sep1 = ",", string sep2 = " ");
   vector<mat> params;
   vector<mat> bias;
   vector<mat> velocity;

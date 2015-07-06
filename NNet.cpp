@@ -730,7 +730,7 @@ void NNet::train_net(double lrate, int mode, int verbose)
 	      ttemp_rmse = temp_rmse;
 	      if (loadmode == 1)
 		{
-		  test_file(loadfile,verbose);
+		  testfile(loadfile,verbose);
 		}
 	      else 
 		{
@@ -1248,7 +1248,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 	      ttemp_rmse = temp_rmse;
 	      if (loadmode == 1)
 		{
-		  test_file(loadfile,verbose);
+		  testfile(loadfile,verbose);
 		}
 	      else 
 		{
@@ -1500,7 +1500,12 @@ void NNet::savenet(string netname)
     }
   savednets.close();
   savednets.open(".savednets",fstream::out);
-  names.push_back(netname + "*" + to_string(numhid + 1));
+  string funcstring = "";
+  for (int i = 0; i < numhid + 1; i++)
+    {
+      funcstring = funcstring + to_string(funclayer[i]);
+    }
+  names.push_back(netname +"*"+ to_string(classreg) + "*" + to_string(numhid + 1) + "*" + funcstring);
   int lent = names.size();
   for (int i = 0; i < lent; i++)
     {
@@ -1535,6 +1540,7 @@ void NNet::loadnet(string netname)
   string num = "";
   int chk = 1;
   string spchar = "*";
+  vector<int> tempfunc;
   while(getline(savednets,temp))
     {
       chk = 0;
@@ -1545,15 +1551,31 @@ void NNet::loadnet(string netname)
 	{
 	  if (temp.at(j) == spchar.at(0))
 	    {
-	      chk1 = 1;
+	      chk1++;
+	      continue;
 	    }
 	  if (chk1 == 0)
 	    {
 	      tempname = tempname + temp.at(j);
 	    }
-	  if ((chk1 == 1) && (tempname == netname ))
+	  if ((chk1 > 0) && (tempname == netname))
 	    {
-	      num = num + temp.at(j);
+	      if (chk1 == 1)
+		{
+		  string tclass = "";
+		  tclass = tclass + temp.at(j);
+		  classreg = stoi(tclass,NULL);
+		}
+	      else if (chk1 == 2)
+		{
+		  num = num + temp.at(j);
+		}
+	      else if (chk1 == 3)
+		{
+		  string fstr = "";
+		  fstr = fstr + temp.at(j);
+		  tempfunc.push_back(stoi(fstr,NULL));
+		}
 	      chk = 1;
 	    }
 	}
@@ -1572,16 +1594,37 @@ void NNet::loadnet(string netname)
       int numparams = stoi(num,NULL);
       numhid = numparams - 1;
       netname = "." + netname + "_";
-      for (int i = 0; i < numparams; i++)
+      funclayer = tempfunc;
+      if (!params.empty())
 	{
-	  bool stat1 = params.at(i).load(netname + "p" + to_string(i));
-	  bool stat2 = bias.at(i).load(netname + "b" + to_string(i));
-	  if ((stat1 != true) || (stat2 != true))
+	  params.clear();
+	  bias.clear();
+	  numlayers.clear();
+	}
+      for (int i = 0; i < numparams + 1; i++)
+	{
+	  if (i < numparams)
 	    {
-	      cout<<"Load failed!\n";
-	      params.clear();
-	      bias.clear();
-	      return;
+	      mat p;
+	      mat b;
+	      bool stat1 = p.load(netname + "p" + to_string(i));
+	      bool stat2 = b.load(netname + "b" + to_string(i));
+	      if ((stat1 != true) || (stat2 != true))
+		{
+		  cout<<"Load failed!\n";
+		  abort();
+		  return;
+		}
+	      else
+		{
+		  params.push_back(p);
+		  bias.push_back(b);
+		  numlayers.push_back(params[i].n_cols);
+		}
+	    }
+	  else
+	    {
+	      numlayers.push_back(params[i-1].n_rows);
 	    }
 	}
     }
@@ -1613,7 +1656,7 @@ void NNet::snets(void)
 
 
 //This method is to test data of a specific file
-void NNet::test_file(string filename,int verbose,string netname, string sep1, string sep2)
+void NNet::test_file(string filename, int verbose,string netname, string sep1, string sep2)
 {
   ifstream ldata(filename);
   if (!ldata.is_open())
@@ -1631,6 +1674,12 @@ void NNet::test_file(string filename,int verbose,string netname, string sep1, st
     {
       loadnet(netname);
       feedforwardmode = -1;
+       if (activ.empty())
+	 {
+	   vector<mat> tr;
+	   activ.push_back(tr);
+	   sums.push_back(tr);
+	 }
     }
   else
     {
@@ -1643,6 +1692,163 @@ void NNet::test_file(string filename,int verbose,string netname, string sep1, st
 	  feedforwardmode = -1;
 	}
     }
+  //parse file input
+  while (getline(ldata,temp))
+    {
+      int lent = temp.length();
+      int track = 0;
+      string num = "";
+      int countx = 0;
+      int county = 0;
+      vector<double> yvals;
+      vector<double> xvals;
+      for(int i = 0; i < lent; i++)
+	{
+	  if  ((temp.at(i) != sep1.at(0)) && (temp.at(i) != sep2.at(0)) && (isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)))
+	    {
+	      cout << "Invalid file format!\n";
+	      return;
+	    }
+	  if (((temp.at(i) != sep1.at(0)) && (temp.at(i) != sep2.at(0)) && (i < (lent-1))) || (temp.at(i) == decp.at(0)) || (temp.at(i) == minussb.at(0)))
+	    {
+	      num = num + temp.at(i);
+	    }
+	  else if ((temp.at(i) == sep1.at(0)) && (track == 0))
+	    {
+	      xvals.push_back(stod(num,NULL));
+	      num = "";
+	      countx++;
+	    }
+	  else if (temp.at(i) == sep2.at(0))
+	    {
+	      track = 1;
+	      xvals.push_back(stod(num,NULL));
+	      num = "";
+	      countx++;
+	    }
+	  else if ((track == 1) && (temp.at(i) == sep1.at(0)))
+	    {
+	      yvals.push_back(stod(num,NULL));
+	      num = "";
+	      county++;
+	    }
+	  else if (i == (lent - 1))
+	    {
+	      num = num + temp.at(i);
+	      yvals.push_back(stod(num,NULL));
+	      num = "";
+	      county++;
+	    }
+	}
+      if (numlines == 0)
+	{
+	  pcountx = countx;
+	  pcounty = county;
+	}
+      else if ((pcountx != countx) || (pcounty != county))
+	{
+	  cout<<"Invalid file format, change in size of vectors!\n";
+	  return;
+	}
+      mat mtempx(xvals);
+      mat mtempy(yvals);
+      testxdata.push_back(mtempx);
+      testydata.push_back(mtempy);
+      numlines++;
+    }
+  int passed = 0;
+  int error = 0;
+  for (int i = 0; i < numlines; i++)
+    {
+      feed_forward(testxdata.at(i),feedforwardmode);
+      if (classreg == 0)
+	{
+	  int max = 0;
+	  int idx = 0;
+	  int lent = numlayers[numhid + 1];
+	  int alent = numhid + 1;
+	  for (int j = 0; j < lent; j++)
+	    {
+	      if (j == 0)
+		{
+		  max = activ[0][alent](j,0);
+		  idx = j;
+		}
+	      else
+		{
+		  if (activ[0][alent](j,0) > max)
+		    {
+		      max = activ[0][alent](j,0);
+		      activ[0][alent](j,0)  = 0.0;
+		      idx = j;
+		    }
+		  else
+		    {
+		      activ[0][alent](j,0) = 0.0;
+		      continue;
+		    }
+		}
+	    }
+	  activ[0][idx](idx,0) = 1.0;
+	  if (abs(activ[0][alent](idx,0) - testydata[i](idx,0)) <= 0.1)
+	    {
+	      passed++;
+	    }
+	}
+      else
+	{
+	  int lent = activ[0][numhid + 1].n_rows;
+	  for (int j = 0; j < lent; j++)
+	    {
+	      error = error + pow(testydata[i](j,0) - activ[0][numhid + 1](j,0),2);
+	    }
+	}
+    }
+  if(classreg == 1)
+    {
+      double RMSE = sqrt((error/(double)numlines));
+      temp_rmse = RMSE;
+      if (verbose == 1)
+	{
+	  double averror =  (sqrt(error))/(double)numlines;
+	  cout<<"RMSE: "<<RMSE<<endl;
+	  cout<<"Average error: "<<averror<<endl;
+	}
+    }
+  else
+    {
+      double hitrate = ((double)passed/(double)numlines)*100;
+      temp_rmse = hitrate;
+      if (verbose == 1)
+	{
+	  cout<<passed<<endl;
+	  cout<<"The accuracy is: "<<hitrate<<"%"<<endl;
+	}
+    }
+  return;
+}
+
+
+
+
+void NNet::testfile(string filename,int verbose,int ffmode, string sep1, string sep2)
+{
+  if (loadmode != 1)
+    {
+      cout<<"Please use test_net() to test this neural net!\n";
+      return;
+    }
+  ifstream ldata(filename);
+  if (!ldata.is_open())
+    {
+      cout<<"Error opening file!\n";
+      return;
+    }
+  string temp;
+  int numlines = 0;
+  string decp = ".";
+  string minussb = "-";
+  int feedforwardmode = ffmode;
   //parse file input
   while (getline(ldata,temp))
     {
@@ -1742,36 +1948,53 @@ void NNet::test_file(string filename,int verbose,string netname, string sep1, st
 	}
       else
 	{
+	  int chk = 1;
 	  int lent = activ[0][numhid + 1].n_rows;
 	  for (int j = 0; j < lent; j++)
 	    {
 	      error = error + pow(testydata[i](j,0) - activ[0][numhid + 1](j,0),2);
+	      if (abs(activ[0][numhid + 1](j,0) - testydata[i](j,0)) <= 0.1)
+		{
+		  continue;
+		}
+	      else
+		{
+		  chk = 0;
+		  break;
+		}
+	    }
+	  if (chk)
+	    {
+	      passed++;
 	    }
 	}
     }
+  double hitrate = ((double)passed/(double)numlines)*100;
+  if (verbose == 1)
+    {
+      cout<<passed<<endl;
+      cout<<"The accuracy is: "<<hitrate<<"%\n";
+    }
+  double RMSE = sqrt((error/(double)numlines));
   if(classreg == 1)
     {
-      double RMSE = sqrt((error/(double)numlines));
       temp_rmse = RMSE;
       if (verbose == 1)
 	{
-	  double averror =  (sqrt(error))/(double)numlines;
+	  double averror =  (sqrt(error)/(double)numlines);
 	  cout<<"RMSE: "<<RMSE<<endl;
 	  cout<<"Average error: "<<averror<<endl;
 	}
     }
   else
     {
-      double hitrate = ((double)passed/(double)numlines)*100;
       temp_rmse = hitrate;
-      if (verbose == 1)
-	{
-	  cout<<passed<<endl;
-	  cout<<"The accuracy is: "<<hitrate<<"%"<<endl;
-	}
     }
-  return; 
+  return;
 }
+
+
+
 
 
 /*
@@ -3194,7 +3417,12 @@ void NNet::lsavenets(string netname, int index)
   savednets.close();
   savednets.open(".savednets",fstream::out);
   int l_numhid = l_numhids[index];
-  names.push_back(netname + "*" + to_string(l_numhid + 1));
+  string funcstring = "";
+  for (int i = 0; i < l_numhid + 1; i++)
+    {
+      funcstring = funcstring + to_string(l_funclayer[index][i]);
+    }
+  names.push_back(netname + "*" + to_string(classreg) +"*" + to_string(l_numhid + 1) + "*" + funcstring);
   int lent = names.size();
   for (int i = 0; i < lent; i++)
     {
@@ -3909,6 +4137,21 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
       random_shuffle(idxs.begin(),idxs.end());
       for (int i = 0; i < epoch; i++)
 	{
+	  if (i == 0)
+	    {
+	      cout<<"Initial error"<<endl;
+	      if (trainmode == 0)
+		{
+		  pc = ((double)i/(double)epoch)*100;
+		  cout<<"\r"<<pc<<"%"<<flush;
+		}
+	      if (trainmode == 1)
+		{
+		  cout<<((double)i/(double)epoch)*100<<"%"<<endl;
+		  l_testall();
+		  cout<<endl;
+		}
+	    }
 	  if (trainmode == 0)
 	    {
 	      pc = ((double)i/(double)epoch)*100;
@@ -4259,6 +4502,17 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 		{
 		  rprop++;
 		}
+	    }
+	  if (trainmode == 0)
+	    {
+	      pc = ((double)i/(double)epoch)*100;
+	      cout<<"\r"<<pc<<"%"<<flush;
+	    }
+	  if (trainmode == 1)
+	    {
+	      cout<<((double)i/(double)epoch)*100<<"%"<<endl;
+	      l_testall();
+	      cout<<endl;
 	    }
 	}
     }
