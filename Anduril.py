@@ -25,9 +25,9 @@ class Anduril():
             print "Invalid input, files not loaded!"
             return;
 
-    def test_file(self,filename, verbose = 0, mode = -1, sep1 = ",", sep2 = " "):
-        if (type(filename) == str) and (type(verbose) == int) and (type(mode) == int) and (type(sep1) == str) and (type(sep2) == " "):
-            self.Net.test_file(filename, verbose, mode, sep1, sep2)
+    def test_file(self,filename, verbose = 0, netname = " ", sep1 = ",", sep2 = " "):
+        if (type(filename) == str) and (type(verbose) == int) and (type(netname) == str) and (type(sep1) == str) and (type(sep2) == " "):
+            self.Net.test_file(filename, verbose, netname, sep1, sep2)
             return
         else:
             print "Invalid input type!"
