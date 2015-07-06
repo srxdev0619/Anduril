@@ -1537,28 +1537,25 @@ void NNet::loadnet(string netname)
   string spchar = "*";
   while(getline(savednets,temp))
     {
-      chk = 1;
+      chk = 0;
       int lent = temp.length();
       int chk1 = 0;
       int lent1 = netname.length();
-      if (lent1 > lent)
-	{
-	  cout<<"No net exists with such a name!\n";
-	  return;
-	}
+      string tempname = "";
       for (int j = 0; j < lent; j++)
 	{
 	  if (temp.at(j) == spchar.at(0))
 	    {
 	      chk1 = 1;
 	    }
-	  else if ((netname.at(j) != temp.at(j)) && (chk1 == 0))
+	  if (chk1 == 0)
 	    {
-	      chk = 0;
+	      tempname = tempname + temp.at(j);
 	    }
-	  else if ((chk1 == 1) && (chk == 1))
+	  if ((chk1 == 1) && (tempname == netname ))
 	    {
 	      num = num + temp.at(j);
+	      chk = 1;
 	    }
 	}
       if (chk == 1)
@@ -1583,6 +1580,8 @@ void NNet::loadnet(string netname)
 	  if ((stat1 != true) || (stat2 != true))
 	    {
 	      cout<<"Load failed!\n";
+	      params.clear();
+	      bias.clear();
 	      return;
 	    }
 	}
