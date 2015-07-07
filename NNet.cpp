@@ -999,11 +999,15 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		  params[l] = params[l] - (0.000001)*tgrads[l]; - 0.00001*params[l];
 		  bias[l] = bias[l] - (0.0001/(double)train)*tdels[l];
 		  rprop++;
+		  tgrads[l].fill(0);
+		  tdels[l].fill(0);
 		}
 	      else
 		{
 		  params[l] = params[l] - tgrads[l];
 		  bias[l] = bias[l] - tdels[l];
+		  tgrads[l].fill(0);
+		  tdels[l].fill(0)
 		}
 	    }
 	  if (rprop >= 1)
@@ -1219,11 +1223,15 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		      params[j] = params[j] - (0.000001)*tgrads[j]; - 0.00001*params[j];
 		      bias[j] = bias[j] - (0.00001/(double)train)*tdels[j];
 		      rprop++;
+		      tgrads[j].fill(0);
+		      tdels[j].fill(0);
 		    }
 		  else
 		    {
 		      params[j] = params[j] - tgrads[j];
 		      bias[j] = bias[j] - tdels[j];
+		      tgrads[j].fill(0);
+		      tdels[j].fill(0);
 		    }
 		}
 	      if(rprop >= 1)
@@ -4185,11 +4193,15 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 		    {
 		      l_params[t][l] = l_params[t][l] - 0.00000001*l_tgrads[t][l] - 0.00001*l_params[t][l];
 		      l_bias[t][l] = l_bias[t][l] - 0.00000001*l_tdels[t][l+1];
+		      l_tgrads[t][l].fill(0);
+		      l_tdels[t][l+1].fill(0);
 		    }
 		  else
 		    {
 		      l_params[t][l] = l_params[t][l] - l_tgrads[t][l];
 		      l_bias[t][l] = l_bias[t][l] - l_tdels[t][l+1];
+		      l_tgrads[t][l].fill(0);
+		      l_tdels[t][l].fill(0);
 		    }
 		}
 	    }
