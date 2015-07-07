@@ -4140,14 +4140,8 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 	  if (i == 0)
 	    {
 	      cout<<"Initial error"<<endl;
-	      if (trainmode == 0)
-		{
-		  pc = ((double)i/(double)epoch)*100;
-		  cout<<"\r"<<pc<<"%"<<flush;
-		}
 	      if (trainmode == 1)
 		{
-		  cout<<((double)i/(double)epoch)*100<<"%"<<endl;
 		  l_testall();
 		  cout<<endl;
 		}
