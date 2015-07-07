@@ -4201,7 +4201,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 		      l_params[t][l] = l_params[t][l] - l_tgrads[t][l];
 		      l_bias[t][l] = l_bias[t][l] - l_tdels[t][l+1];
 		      l_tgrads[t][l].fill(0);
-		      l_tdels[t][l].fill(0);
+		      l_tdels[t][l+1].fill(0);
 		    }
 		}
 	    }
@@ -4454,7 +4454,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 					  double temp;
 					  temp = 0.1*0.5;
 					  temp = max(temp,0.000001);
-					  temp = 0.001;
 					  l_checkgrads[fl][q](rw,cl) = sign*(temp);
 					}
 				      else
