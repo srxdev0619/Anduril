@@ -4013,7 +4013,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 				      temp = max(temp,0.000001);
 				      temp = 0.001;
 				      l_checkgrads[fl][q](rw,cl) = sign*(temp);
-				    }				    }
+				    }				    
 				  else
 				    {
 				      double sign = copysign(1,l_tgrads[fl][q](rw,cl));
