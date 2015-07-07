@@ -1007,7 +1007,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		  params[l] = params[l] - tgrads[l];
 		  bias[l] = bias[l] - tdels[l];
 		  tgrads[l].fill(0);
-		  tdels[l].fill(0)
+		  tdels[l].fill(0);
 		}
 	    }
 	  if (rprop >= 1)
