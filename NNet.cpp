@@ -3926,27 +3926,110 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 			}
 		    }
 		}
-	      for(int q = 0; q < numfiles; q++)
+	      mat lat_grads = zeros<mat>(numlatent,1);
+	      for (int q = 0; q < numfiles; q++)
 		{
-		  if( qmat == 1)
+		  if(qmat == 1)
 		    {
 		      if (Q_mat[i][q] == 1)
 			{
 			  for(int j = 0; j < numlatent; j++)
 			    {
-			      l_xvals[i](j,0) = l_xvals[i](j,0) - (lrates[q]/4.0)*l_tdels[q][0](j,0);
-			      l_tdels[q][0].fill(0); //Doing this is the textbook method but commenting this out just works much much better
+			      lat_grads(j,0) = lat_grads(j,0) + l_tdels[q][0](j,0);
 			    }
+			  l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
 			}
 		    }
 		  else
 		    {
 		      for(int j = 0; j < numlatent; j++)
 			{
-			  l_xvals[i](j,0) = l_xvals[i](j,0) - (lrates[j]/4.0)*l_tdels[q][0](j,0);
-			  l_tdels[q][0].fill(0); //Doing this is the textbook method but commenting this out just works much much better
+			  lat_grads(j,0) = lat_grads(j,0) + l_tdels[q][0](j,0);
+			}
+		      l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
+		    } 
+		}
+	      if (lat_rprop == 0)
+		{
+		  lat_checkgrads = lat_grads;
+		}
+	      else
+		{
+		  for(int j = 0; j < numlatent; j++)
+		    {
+		      if (lat_checkgrads(j,0)*lat_grads(j,0) > 0)
+			{
+			  if (lat_rprop == 1)
+			    {
+			      double sign = copysign(1,lat_grads(j,0));
+			      lat_grads(j,0) = sign*1.2*0.1;
+			      lat_checkgrads(j,0) = lat_grads(j,0);
+			    }
+			  else
+			    {
+			      double sign = copysign(1,lat_grads(j,0));
+			      lat_grads(j,0) = 1.2*abs(lat_checkgrads(j,0));
+			      lat_grads(j,0) = min(lat_grads(j,0),rmax);
+			      lat_checkgrads(j,0) = sign*lat_grads(j,0);
+			      lat_grads(j,0) = sign*lat_grads(j,0);
+			    }
+			}
+		      else if ((lat_checkgrads(j,0)*lat_grads(j,0) < 0))
+			{
+			  if(lat_rprop == 1)
+			    {
+			      //double sign = lat_grads(j,0)/abs(lat_grads(j,0));
+			      double sign = copysign(1,lat_grads(j,0));
+			      lat_grads(j,0) = sign*0.5*0.1;
+			      lat_checkgrads(j,0) = lat_grads(j,0);
+			    }
+			  else
+			    {
+			      double sign = copysign(1,lat_grads(j,0));
+			      double temp = 0.5*abs(lat_checkgrads(j,0));
+			      temp = max(temp,0.0000001);
+			      lat_checkgrads(j,0) = sign*temp;
+			      lat_grads(j,0) = sign*temp;
+			    }
+			}
+		      else if ((lat_checkgrads(j,0)*lat_grads(j,0) == 0))
+			{
+			  if(lat_rprop == 1)
+			    {
+			      double sign = copysign(1,lat_grads(j,0));
+			      lat_grads(j,0) =  sign*0.1;
+			    }
+			  else
+			    {
+			      double sign = copysign(1,lat_grads(j,0));
+			      lat_grads(j,0) =  sign*abs(lat_checkgrads(j,0));
+			    }
 			}
 		    }
+		}
+	      if (lat_rprop == 0)
+		{
+		  for(int j = 0; j < numlatent; j++)
+		    {
+		      l_xvals[i](j,0) = l_xvals[i](j,0) - (0.00001)*lat_grads(j,0);
+		      //l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
+		    }
+		}
+	      else
+		{
+		  for(int j = 0; j < numlatent; j++)
+		    {
+		      l_xvals[i](j,0) = l_xvals[i](j,0) - lat_grads(j,0);
+		      //l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
+		    }
+		}
+	      if (lat_rprop >= 1)
+		{
+		  lat_rprop = 3;
+		}
+	      else
+		{
+		  lat_rprop++;
 		}
 	    }
 	  if (rprop == 0)
