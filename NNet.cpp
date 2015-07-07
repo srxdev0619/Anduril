@@ -3937,7 +3937,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 			    {
 			      lat_grads(j,0) = lat_grads(j,0) + l_tdels[q][0](j,0);
 			    }
-			  l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
+			  //l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
 			}
 		    }
 		  else
@@ -3946,7 +3946,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 			{
 			  lat_grads(j,0) = lat_grads(j,0) + l_tdels[q][0](j,0);
 			}
-		      l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
+		      //l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
 		    } 
 		}
 	      if (lat_rprop == 0)
@@ -4087,7 +4087,6 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 				      double temp;
 				      temp = 0.1*0.5;
 				      temp = max(temp,0.000001);
-				      temp = 0.001;
 				      l_checkgrads[fl][q](rw,cl) = sign*(temp);
 				    }				    
 				  else
