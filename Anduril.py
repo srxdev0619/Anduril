@@ -87,17 +87,17 @@ class Anduril():
             return
     
 
-    def ls_load(self,outputfiles, Qmatrix = " ", mode = 0, input_file = " ", sep1 = ","):
-        if (type(outputfiles) == str) and (type(Qmatrix) == str) and (type(mode) == int) and (type(input_file) == str) and (type(sep1) == str):
-            self.Net.ls_load(outputfiles,Qmatrix,mode,input_file,sep1)
+    def ls_load(self,outputfiles, Qmatrix = " ", input_file = " ", sep1 = ","):
+        if (type(outputfiles) == str) and (type(Qmatrix) == str) and (type(input_file) == str) and (type(sep1) == str):
+            self.Net.ls_load(outputfiles,Qmatrix,input_file,sep1)
             return
         else:
             print "Invalid input!"
             return
 
-    def l_load(self,Qmatrix = " ", mode = 0, input_file = " ", sep1 = ","):
-        if (type(Qmatrix) == str) and (type(mode) == int) and (type(input_file) == str) and (type(sep1) == str):
-            self.Net.l_load(Qmatrix,mode,input_file,sep1)
+    def l_load(self,Qmatrix = " ", input_file = " ", sep1 = ","):
+        if (type(Qmatrix) == str) and (type(input_file) == str) and (type(sep1) == str):
+            self.Net.l_load(Qmatrix,input_file,sep1)
             return
         else:
             print "Invalid input!"
