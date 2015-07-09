@@ -3821,7 +3821,7 @@ void NNet::testvoids(int mode)
 		  double err = 0;
 		  for(int t = 0; t < lent; t++)
 		    {
-		      err = err + pow(l_activ[j][l_numhid + 1][t] - l_yvals[j][i][t],2);
+		      err = err + pow(l_activ[j][l_numhid + 1](t,0) - l_yvals[j][i](t,0),2);
 		    }
 		  LRMSE[j] = LRMSE[j] + err;
 		  counts[j]++;
@@ -3835,7 +3835,7 @@ void NNet::testvoids(int mode)
 	       double err = 0;
 	       for(int t = 0; t < lent; t++)
 		 {
-		   err = err + pow(l_activ[j][l_numhid + 1][t] - l_yvals[j][i][t],2);
+		   err = err + pow(l_activ[j][l_numhid + 1](t,0) - l_yvals[j][i](t,0),2);
 		 }
 	       LRMSE[j] = LRMSE[j] + err;
 	       counts[j]++;
@@ -4746,7 +4746,7 @@ void NNet::l_testall(void)
 		  double err = 0;
 		  for(int t = 0; t < lent; t++)
 		    {
-		      err = err + pow(l_activ[j][l_numhid + 1][t] - l_yvals[j][i][t],2);
+		      err = err + pow(l_activ[j][l_numhid + 1](t,0) - l_yvals[j][i](t,0),2);
 		    }
 		  TSRMSE[j] = TSRMSE[j] + err;
 		  tscounts[j]++; 
@@ -4759,7 +4759,7 @@ void NNet::l_testall(void)
 		  double err = 0;
 		  for(int t = 0; t < lent; t++)
 		    {
-		      err = err + pow(l_activ[j][l_numhid + 1][t] - l_yvals[j][i][t],2);
+		      err = err + pow(l_activ[j][l_numhid + 1](t,0) - l_yvals[j][i](t,0),2);
 		    }
 		  TRRMSE[j] = TRRMSE[j] + err;
 		  trcounts[j]++; 
@@ -4773,7 +4773,7 @@ void NNet::l_testall(void)
 	       double err = 0;
 	       for(int t = 0; t < lent; t++)
 		 {
-		   err = err + pow(l_activ[j][l_numhid + 1][t] - l_yvals[j][i][t],2);
+		   err = err + pow(l_activ[j][l_numhid + 1](t,0) - l_yvals[j][i](t,0),2);
 		 }
 	       TRRMSE[j] = TRRMSE[j] + err;
 	       trcounts[j]++;
