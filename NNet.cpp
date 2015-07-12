@@ -2189,11 +2189,6 @@ void NNet::ls_init(string nconfig, int iclassreg, int igradd, int icostfunc, int
       cout<<"Invalid network configuration!\n";
       return;
     }
-  if (epoch <= 0)
-    {
-      cout<<"Invalid configuration\nPlease choose the number of epochs to be trained";
-      return;
-    }
   if (!l_funclayer.empty())
     {
       l_funclayer.clear();
@@ -2597,11 +2592,6 @@ void NNet::l_init(int num_files, int iclassreg, int inumcores, int igradd, int i
   if ((classreg > 1) || (gradd > 1) || (costfunc > 1) || (classreg < 0) || (gradd < 0))
     {
       cout<<"Invalid network configuration!\n";
-      return;
-    }
-  if (epoch <= 0)
-    {
-      cout<<"Invalid configuration\nPlease choose the number of epochs to be trained";
       return;
     }
   if (!l_funclayer.empty())
@@ -3080,7 +3070,7 @@ void NNet::l_backprop(mat x, mat y, int gpos)
 
 
 //Training weights and latent parameters
-void NNet::l_trainnet(int numlatent, int mode)
+void NNet::l_trainnet(int numlatent, int mode, double tol)
 {
     if (l_yvals.empty())
     {
@@ -3158,8 +3148,31 @@ void NNet::l_trainnet(int numlatent, int mode)
       cin>>rate;
       lrates.push_back(rate);
     }
+  int tolcheck;
+  if (epoch < 0)
+    {
+      if (tol < 0)
+	{
+	  cout<<"Please enter a tolerence value!"<<endl;
+	  for (int i = 0; i < numfiles; i++)
+	    {
+	      l_params[i].clear();
+	      l_tgrads[i].clear();
+	      l_bias[i].clear();
+	      l_tdels[i].clear();
+	    }
+	  return;
+	}
+      tolcheck = 1;
+      epoch = 10;
+    }
+  else
+    {
+      tolcheck = 0;
+    }
   if (gradd == 0)
     {
+      int c_epoch = 0;
       for (int k = 0; k < epoch; k++)
 	{
 	  if (k == 0 && (trainmode == 1))
@@ -3168,9 +3181,17 @@ void NNet::l_trainnet(int numlatent, int mode)
 	      l_testall();
 	      cout<<endl;
 	    }
-	  for (int i = 0; i < train; i++)
+	  if (tolcheck == 1)
+	    {
+	      k = -2;
+	    }
+	  for (int i = 0; i < l_train; i++)
 	    {
 	      int threadcount = 0;
+	      if (!l_bpthreads.empty())
+		{
+		  l_bpthreads.clear();
+		}
 	      for (int j = 0; j < numfiles; j++)
 		{
 		  if (qmat == 1)
@@ -3249,22 +3270,51 @@ void NNet::l_trainnet(int numlatent, int mode)
 		  l_bias[t][l] = l_bias[t][l] - (lrates[t]/(double)train)*l_tdels[t][l];
 		}
 	    }
-	  if (trainmode == 0)
+	  if (tolcheck == 0)
 	    {
-	      double pc = ((double)k/(double)epoch)*100;
-	      cout<<"\r"<<pc<<"%"<<flush;
+	      if (trainmode == 0)
+		{
+		  double pc = ((double)k/(double)epoch)*100;
+		  cout<<"\r"<<pc<<"%"<<flush;
+		}
+	      else if (trainmode == 1)
+		{
+		  cout<<((double)k/(double)epoch)*100<<"%"<<endl;
+		  l_testall();
+		  cout<<endl;
+		}
 	    }
-	  else if (trainmode == 1)
+	  else
 	    {
-	      cout<<((double)k/(double)epoch)*100<<"%"<<endl;
-	      l_testall();
-	      cout<<endl;
+	      if (trainmode == 0)
+		{
+		  cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		  l_testall(1);
+		  if (l_error <= tol)
+		    {
+		      cout<<"Convergence reached!"<<endl;
+		      return;
+		    }
+		  c_epoch++;
+		}
+	      else if (trainmode == 1)
+		{
+		  cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		  l_testall();
+		  if (l_error <= tol)
+		    {
+		      cout<<"Convergence reached!"<<endl;
+		      return;
+		    }
+		  c_epoch++;
+		  cout<<endl;
+		}
 	    }
 	}
     }
-  //TODO:MODIFY SGD FOR LATENT PARAMS
   else if (gradd == 1)
     {
+      int c_epoch = 0;
       cout<<"Initializing Stochastic Gradient Descent L\n";
       vector<int> idxs;
       for (int i = 0; i < l_train; i++)
@@ -3280,10 +3330,14 @@ void NNet::l_trainnet(int numlatent, int mode)
 	      l_testall();
 	      cout<<endl;
 	    }
+	  if (tolcheck == 1)
+	    {
+	      i = -2;
+	    }
 	  int step = 0;
 	  for (int lr = 0; lr < numfiles; lr++)
 	    {
-	      lrates[lr] = 0.99*lrates[lr];
+	      lrates[lr] = 0.999*lrates[lr];
 	    }
 	  while (step < l_train)
 	    {
@@ -3369,7 +3423,7 @@ void NNet::l_trainnet(int numlatent, int mode)
 	      for(int q = 0; q < numfiles; q++)
 		{
 		  int lnumhid = l_numhids[q];
-		  for (int j = 0; j < lnumhid + 1; j++)
+		  for(int j = 0; j < lnumhid + 1; j++)
 		    {
 		      //the below only applies if regression is going.....
 		      if ((classreg == 1) || (classreg == 0))
@@ -3390,16 +3444,45 @@ void NNet::l_trainnet(int numlatent, int mode)
 		    }
 		}
 	    }
-	  if (trainmode == 0)
+	  if (tolcheck == 0)
 	    {
-	      double pc = ((double)i/(double)epoch)*100;
-	      cout<<"\r"<<pc<<"%"<<flush;
+	      if (trainmode == 0)
+		{
+		  double pc = ((double)i/(double)epoch)*100;
+		  cout<<"\r"<<pc<<"%"<<flush;
+		}
+	      else if (trainmode == 1)
+		{
+		  cout<<((double)i/(double)epoch)*100<<"%"<<endl;
+		  l_testall();
+		  cout<<endl;
+		}
 	    }
-	  else if (trainmode == 1)
+	  else
 	    {
-	      cout<<((double)i/(double)epoch)*100<<"%"<<endl;
-	      l_testall();
-	      cout<<endl;
+	      if (trainmode == 0)
+		{
+		  cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		  l_testall(1);
+		  if (l_error <= tol)
+		    {
+		      cout<<"Convergence reached!"<<endl;
+		      return;
+		    }
+		  c_epoch++;
+		}
+	      else if (trainmode == 1)
+		{
+		  cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		  l_testall();
+		  if (l_error <= tol)
+		    {
+		      cout<<"Convergence reached!"<<endl;
+		      return;
+		    }
+		  c_epoch++;
+		  cout<<endl;
+		}
 	    }
 	}
     }
@@ -3857,7 +3940,7 @@ void NNet::testvoids(int mode)
 
 
 //RPROP for latent parameter learning
-void NNet::l_trainrprop(int numlatent, double tmax, int mode)
+void NNet::l_trainrprop(int numlatent, double tmax, int mode, double tol)
 {
   if (l_yvals.empty())
     {
@@ -3948,8 +4031,31 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
       double rate = 0.0001;
       lrates.push_back(rate);
     }
+  int tolcheck;
+  if (epoch < 0)
+    {
+      if (tol < 0)
+	{
+	  cout<<"Please enter a tolerence value!"<<endl;
+	  for (int i = 0; i < numfiles; i++)
+	    {
+	      l_params[i].clear();
+	      l_tgrads[i].clear();
+	      l_bias[i].clear();
+	      l_tdels[i].clear();
+	    }
+	  return;
+	}
+      tolcheck = 1;
+      epoch = 10;
+    }
+  else
+    {
+      tolcheck = 0;
+    }
   if (gradd == 0)
     {
+      int c_epoch = 0;
       for (int k = 0; k < epoch; k++)
 	{
 	  if (k == 0 && (trainmode == 1))
@@ -3957,6 +4063,10 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 	      cout<<"Initial error"<<endl;
 	      l_testall();
 	      cout<<endl;
+	    }
+	  if (tolcheck == 1)
+	    {
+	      k = -2;
 	    }
 	  for (int i = 0; i < l_train; i++)
 	    {
@@ -4290,21 +4400,51 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 	    {
 	      rprop++;
 	    }
-	  if (trainmode == 0)
+	  if (tolcheck == 0)
 	    {
-	      double pc = ((double)k/(double)epoch)*100;
-	      cout<<"\r"<<pc<<"%"<<flush;
+	      if (trainmode == 0)
+		{
+		  double pc = ((double)k/(double)epoch)*100;
+		  cout<<"\r"<<pc<<"%"<<flush;
+		}
+	      else if (trainmode == 1)
+		{
+		  cout<<((double)k/(double)epoch)*100<<"%"<<endl;
+		  l_testall();
+		  cout<<endl;
+		}
 	    }
-	  else if (trainmode == 1)
+	  else
 	    {
-	      cout<<((double)k/(double)epoch)*100<<"%"<<endl;
-	      l_testall();
-	      cout<<endl;
+	      if (trainmode == 0)
+		{
+		  cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		  l_testall(1);
+		  if (l_error <= tol)
+		    {
+		      cout<<"Convergence reached!"<<endl;
+		      return;
+		    }
+		  c_epoch++;
+		}
+	      else if (trainmode == 1)
+		{
+		  cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		  l_testall();
+		  if (l_error <= tol)
+		    {
+		      cout<<"Convergence reached!"<<endl;
+		      return;
+		    }
+		  c_epoch++;
+		  cout<<endl;
+		}
 	    }
 	}
     }
   else if (gradd == 1)
     {
+      int c_epoch = 0;
       cout<<"Initializing Stochastic Gradient Descent"<<endl;
       double pc = 0;
       vector<int> idxs;
@@ -4320,6 +4460,10 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 	      cout<<"Initial error"<<endl;
 	      l_testall();
 	      cout<<endl;
+	    }
+	  if (tolcheck == 1)
+	    {
+	      i = -2;
 	    }
 	  int step = 0;
 	  while (step < l_train)
@@ -4659,16 +4803,45 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode)
 		  rprop++;
 		}
 	    }
-	  if (trainmode == 0)
+	  if (tolcheck == 0)
 	    {
-	      pc = ((double)i/(double)epoch)*100;
-	      cout<<"\r"<<pc<<"%"<<flush;
+	      if (trainmode == 0)
+		{
+		  pc = ((double)i/(double)epoch)*100;
+		  cout<<"\r"<<pc<<"%"<<flush;
+		}
+	      else if (trainmode == 1)
+		{
+		  cout<<((double)i/(double)epoch)*100<<"%"<<endl;
+		  l_testall();
+		  cout<<endl;
+		}
 	    }
-	  else if (trainmode == 1)
+	  else
 	    {
-	      cout<<((double)i/(double)epoch)*100<<"%"<<endl;
-	      l_testall();
-	      cout<<endl;
+	      if (trainmode == 0)
+		{
+		  cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		  l_testall(1);
+		  if (l_error <= tol)
+		    {
+		      cout<<"Convergence reached!"<<endl;
+		      return;
+		    }
+		  c_epoch++;
+		}
+	      else if (trainmode == 1)
+		{
+		  cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		  l_testall();
+		  if (l_error <= tol)
+		    {
+		      cout<<"Convergence reached!"<<endl;
+		      return;
+		    }
+		  c_epoch++;
+		  cout<<endl;
+		}
 	    }
 	}
     }
@@ -4718,7 +4891,7 @@ void NNet::l_funcarch(void)
 
 
 //
-void NNet::l_testall(void)
+void NNet::l_testall(int mode)
 {
   vector<double> TRRMSE;
   vector<double> TSRMSE;
@@ -4780,20 +4953,28 @@ void NNet::l_testall(void)
 	    }
 	}
     }
+  l_error = 0;
   for(int i = 0; i < numfiles; i++)
     {
       double frmse = sqrt(TRRMSE[i]/(double)trcounts[i]);
       double averr = (sqrt(TRRMSE[i])/(double)trcounts[i]);
-      cout<<"Training error"<<endl;
-      cout<<"Error of file "<<filenames[i]<<" is: "<<averr<<endl;
-      cout<<"RMSE of file "<<filenames[i]<<" is: "<<frmse<<endl;
+      if (mode == 0)
+	{
+	  cout<<"Training error"<<endl;
+	  cout<<"Error of file "<<filenames[i]<<" is: "<<averr<<endl;
+	  cout<<"RMSE of file "<<filenames[i]<<" is: "<<frmse<<endl;
+	}
       if (qmat == 1)
 	{
 	  double tsrmse = sqrt(TSRMSE[i]/(double)tscounts[i]);
 	  double tserror = sqrt(TSRMSE[i])/(double)tscounts[i];
-	  cout<<"Test Error"<<endl;
-	  cout<<"Error of file "<<filenames[i]<<" is: "<<tserror<<endl;
-	  cout<<"RMSE of file "<<filenames[i]<<" is: "<<tsrmse<<endl;
+	  l_error = l_error + tserror;
+	  if (mode == 0)
+	    {
+	      cout<<"Test Error"<<endl;
+	      cout<<"Error of file "<<filenames[i]<<" is: "<<tserror<<endl;
+	      cout<<"RMSE of file "<<filenames[i]<<" is: "<<tsrmse<<endl;
+	    }
 	}
     }
 }

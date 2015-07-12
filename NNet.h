@@ -35,12 +35,12 @@ class NNet
   void ls_load(string ouputfiles, string Qmatrix = " ", string input_file = " ", string sep1 = ",");
   void l_load(string Qmatrix = " ", string input_file = " ", string sep1 = ",");
   void l_init(int numfiles, int iclassreg, int inumcores, int igradd, int icostfunc, int iepoch = 1);
-  void l_trainnet(int numlatent, int mode = 0);
+  void l_trainnet(int numlatent, int mode = 0, double tol = -1);
   //void l_testnet(string filename, string netname);
   void l_savenet(void);
   void ls_savenet(string names, string in_name);
   void test_data(string in_filename, string out_filename, string netname, string sep = ",");
-  void l_trainrprop(int numlatent,double tmax = 1.0, int mode = 0);
+  void l_trainrprop(int numlatent,double tmax = 1.0, int mode = 0, double tol = -1);
   void testvoids(int mode);
   void l_funcarch(void);
  private:
@@ -57,6 +57,7 @@ class NNet
   double min_rmse;
   double temp_rmse;
   string loadfile;
+  double l_error;
   //Feedforward
   void feed_forward(mat x, int gpos);
   //Backprop
@@ -66,7 +67,7 @@ class NNet
   void l_feedforward(mat x, int gpos);
   void l_parallelbp(int index, int pos);
   void lsavenets(string netname,int index);
-  void l_testall(void);
+  void l_testall(int mode = 0);
   void testfile(string filename,int verbose = 0,int ffmode = -1, string sep1 = ",", string sep2 = " ");
   vector<mat> params;
   vector<mat> bias;
@@ -160,9 +161,9 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads3,train_net,1,3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads4,test_net,0,2)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads5,l_load,0,3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads6,l_init,5,6)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads7,l_trainnet,1,2)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads7,l_trainnet,1,3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads8,test_data,3,4)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads9,l_trainrprop,1,3)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads9,l_trainrprop,1,4)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads10,train_rprop,0,3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads11,ls_init,4,5)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads12,ls_load,1,4)

@@ -111,9 +111,9 @@ class Anduril():
             print "Invalid input!"
             return
 
-    def l_trainnet(self,numlatent, mode = 0):
-        if (type(numlatent) == int) and (type(mode) == int):
-            self.Net.l_trainnet(numlatent,mode)
+    def l_trainnet(self,numlatent, mode = 0, tol = -1.0):
+        if (type(numlatent) == int) and (type(mode) == int) and (type(tol) == float):
+            self.Net.l_trainnet(numlatent,mode,tol)
             return
         else:
             print "Invalid input, network not trained!"
@@ -133,9 +133,9 @@ class Anduril():
             return
 
         
-    def l_trainrprop(self,numlatent,tmax = 15.0,mode = 0):
-        if (type(numlatent) == int) and (type(tmax) == float) and (type(mode) == int):
-            self.Net.l_trainrprop(numlatent,tmax,mode)
+    def l_trainrprop(self,numlatent,tmax = 15.0,mode = 0, tol = -1.0):
+        if (type(numlatent) == int) and (type(tmax) == float) and (type(mode) == int) and (type(tol) == float):
+            self.Net.l_trainrprop(numlatent,tmax,mode,tol)
             return
         else:
             print "Invalid input!"
