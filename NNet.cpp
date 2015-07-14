@@ -4978,3 +4978,1261 @@ void NNet::l_testall(int mode)
 	}
     }
 }
+
+
+
+//TODO MODIFY WHEN NNET IS UPDATED
+//Calculates the second order gradients
+void NNet::ld_backprop(mat x, mat y, int gpos)
+{
+  int idx;
+  if (gpos == -1)
+    {
+      idx = 0;
+    }
+  else
+    {
+      idx = gpos;
+    }
+  int l_numhid = l_numhids.at(idx);
+  l_feedforward(x,idx);
+  if(!ld_grads[idx].empty())
+    { 
+      ld_grads[idx].clear();
+    }
+  if(!ld_dels[idx].empty())
+    {
+      ld_dels[idx].clear();
+    }
+  if (costfunc == 0)
+    {
+      if (l_funclayer[idx][l_numhid] == 0)
+	{
+	  ld_dels[idx].push_back(2.0*((l_activ[idx][l_numhid+1] - (l_activ.at(idx).at(l_numhid+1)%l_activ.at(idx).at(l_numhid+1)))%(l_activ[idx][l_numhid+1] - (l_activ.at(idx).at(l_numhid+1)%l_activ.at(idx).at(l_numhid+1)))));
+	}
+      else if (l_funclayer[idx][l_numhid] == 1)
+	{
+	  ld_dels[idx].push_back(2.0*((ones<mat>(numlayers[l_numhid+1],1) - l_activ[idx][l_numhid+1]%l_activ[idx][l_numhid+1])%(ones<mat>(numlayers[l_numhid+1],1) - l_activ[idx][l_numhid+1]%l_activ[idx][l_numhid+1])));
+	}
+      else if (l_funclayer[idx][l_numhid] == 2)
+	{
+	  for (int i = 0; i < l_numlayers[idx][l_numhid+1]; i++)
+	    {
+	      l_sums[idx][l_numhid + 1](i,0) = rec_D(l_sums[idx][l_numhid + 1](i,0));
+	    }
+	  ld_dels[idx].push_back(2.0*(l_sums[idx][l_numhid+1]%l_sums[idx][l_numhid+1]));
+	}
+      else if (l_funclayer[idx][l_numhid] == 3)
+	{
+	  for (int i = 0; i < l_numlayers[idx][l_numhid+1]; i++)
+	    {
+	      l_sums[idx][l_numhid + 1](i,0) = tanh_d(l_sums[idx][l_numhid + 1](i,0));
+	    }
+	  ld_dels[idx].push_back(2.0*(l_sums[idx][l_numhid+1]%l_sums[idx][l_numhid+1]));
+	}
+    }
+  else
+    {
+      //TODO: have to complete results for other cost functions
+      return;
+    }
+  int count = 1;
+  for (int i = 0; i < l_numhid + 1; i++)
+    {
+      mat temp;
+      temp = ((l_params[idx][l_numhid - i]%l_params[idx][l_numhid - i]).t())*(ld_dels[idx][i]);
+      mat derv = l_sums[idx][l_numhid - i];
+      if (i < l_numhid)
+	{
+	  if (l_funclayer[idx][l_numhid - count] == 0)
+	    { 
+	      derv = l_activ[idx][l_numhid- i] - (l_activ[idx][l_numhid - i]%l_activ[idx][l_numhid - i]);
+	    }
+	  else if (l_funclayer[idx][l_numhid-count] == 1)
+	    {
+	      int n = l_numlayers[idx][l_numhid - i];
+	      for (int j = 0; j < n; j++)
+		{
+		  derv(j,0) = tanh_dr(derv(j,0));
+		}
+	    }
+	  else if (l_funclayer[idx][l_numhid - count] == 2)
+	    {
+	      int n = l_numlayers[idx][l_numhid - i];
+	      for (int j = 0; j < n; j++)
+		{
+		  derv(j,0) = rec_D(derv(j,0));
+		}
+	    }
+	  else if (l_funclayer[idx][l_numhid-count] == 3)
+	    {
+	      int n = l_numlayers[idx][l_numhid - i];
+	      for (int j = 0; j < n; j++)
+		{
+		  derv(j,0) = tanh_d(derv(j,0));
+		}
+	    }
+	}
+      else
+	{
+	  derv = ones<mat>(l_numlayers[idx][0],1);
+	}
+      temp = temp%(derv%derv);
+      ld_dels[idx].push_back(temp);
+      count++;
+    }
+  for (int i = 0; i < l_numhid + 1; i++)
+    {
+      ld_grads[idx].push_back(ld_dels[idx][i]*((l_activ[idx][l_numhid - i]%l_activ[idx][l_numhid - i]).t()));
+    }
+  return;
+}
+
+
+
+void NNet::OBD_init(void)
+{
+  if (!ld_tdels.empty())
+    {
+      ld_tdels.clear();
+    }
+  for(int i = 0; i < l_train; i++)
+    {
+      ld_tdels.push_back(zeros<mat>(l_numx,1));
+    }
+}
+
+
+
+void NNet::l_optimalBD(int pos)
+{
+  int l_numhid = l_numhids[pos];
+  if (!ld_tgrads[pos].empty())
+    {
+      ld_tgrads[pos].clear();
+    }
+  for(int j = 0; j < l_numhid + 1; j++)
+    {
+      int rows = l_numlayers[pos][j+1];
+      int cols = l_numlayers[pos][j];
+      ld_tgrads[pos].push_back(zeros<mat>(rows,cols));
+    }
+  int l_count = 0;
+  double factc;
+  for (int i = 0; i < l_train; i++)
+    {
+      if (qmat == 1)
+	{
+	  if (Q_mat[i][pos] == 1)
+	    {
+	      ld_backprop(l_xvals[i],l_yvals[pos][i],pos);
+	      l_count++;
+	      reverse(ld_grads[pos].begin(),ld_grads[pos].end());
+	      for(int j = 0; j < l_numhid + 1; j++)
+		{
+		  ld_tgrads[pos][j] = ld_tgrads[pos][j] + ld_grads[pos][j];
+		}
+	      for (int j = 0; j < l_numx; j++)
+		{
+		  ld_tdels[i](j,0) = ld_tdels[i](j,0) + ld_dels[pos][l_numhid + 1](j,0);
+		}
+	    }
+	}
+      else
+	{
+	  ld_backprop(l_xvals[i],l_yvals[pos][i],pos);
+	  l_count++;
+	  reverse(ld_grads[pos].begin(),ld_grads[pos].end());
+	  for(int j = 0; j < l_numhid + 1; j++)
+	    {
+	      ld_tgrads[pos][j] = ld_tgrads[pos][j] + ld_grads[pos][j];
+	    }
+	  for (int j = 0; j < l_numx; j++)
+	    {
+	      ld_tdels[i](j,0) = ld_tdels[i](j,0) + ld_dels[pos][l_numhid + 1](j,0);
+	    }
+	}
+    }
+  factc = 1.0/(double)l_count;
+  if (!l_saliencies[pos].empty())
+    {
+      l_checksals[pos] = l_saliencies[pos];
+      l_saliencies[pos].clear();
+    }
+  for(int i = 0; i < l_numhid + 1; i++)
+    {
+      l_saliencies[pos].push_back(factc*0.5*((l_params[pos][i]%l_params[pos][i])%ld_tgrads[pos][i]));
+    }
+  double min_s = 1000.0 + l_saliencies[0][0](0,0);
+  for(int i = 0; i < l_numhid + 1; i++)
+    {
+      int rows = l_saliencies[pos][i].n_rows;
+      int cols = l_saliencies[pos][i].n_cols;
+      for(int rw = 0; rw < rows; rw++)
+	{
+	  for(int cl = 0; cl < cols; cl++)
+	    {
+	      if (l_saliencies[pos][i](rw,cl) < min_s)
+		{
+		  min_s = l_saliencies[pos][i](rw,cl);
+		}
+	      else
+		{
+		  continue;
+		}
+	    }
+	}
+    }
+  for(int i = 0; i < l_numhid + 1; i++)
+    {
+      int rows = l_saliencies[pos][i].n_rows;
+      int cols = l_saliencies[pos][i].n_cols;
+      double s_tol = min_s/10.0;
+      for(int rw = 0; rw < rows; rw++)
+	{
+	  for(int cl = 0; cl < cols; cl++)
+	    {
+	      if (abs(l_saliencies[pos][i](rw,cl) - min_s) < s_tol)
+		{
+		  l_saliencies[pos][i](rw,cl) = 0.0;
+		}
+	      else
+		{
+		  l_saliencies[pos][i](rw,cl) = 1.0*l_checksals[pos][i](rw,cl);
+		}
+	    }
+	}
+    }
+}
+
+
+void NNet::ls_optimalBD(void)
+{
+  if (!ls_saliencies.empty())
+    {
+      ls_saliencies.clear();
+    }
+  vector<double> l_mins;
+  for (int i = 0; i < l_train; i++)
+    {
+      ls_saliencies.push_back((1.0/(double)numfiles)*ld_tdels[i]);
+      l_mins.push_back(1000.0);
+    }
+  for (int i = 0; i < l_train; i++)
+    {
+      for(int j = 0; j < l_numlatent; j++)
+	{
+	  if (ls_saliencies[i](j,0) < l_mins[i])
+	    {
+	      l_mins[i] = ls_saliencies[i](j,0);
+	    }
+	  else
+	    {
+	      continue;
+	    }
+	}
+    }
+  vector<double> s_tol;
+  for(int i = 0; i < l_train; i++)
+    {
+      s_tol.push_back(l_mins[i]/10.0);
+      for(int j = 0; j < l_numx; j++)
+	{
+	  if (j < l_numlatent)
+	    {
+	      if (abs(ls_saliencies[i](j,0) - l_xvals[i](j,0)) < s_tol[i])
+		{
+		  ls_saliencies[i](j,0) = 0.0;
+		}
+	      else
+		{
+		  ls_saliencies[i](j,0) = 1.0;
+		}
+	    }
+	  else
+	    {
+	      ls_saliencies[i](j,0) = 1.0;
+	    }
+	}
+    }
+}
+
+
+
+void NNet::ld_trainrprop(int numlatent, double tmax, int mode, double tol)
+{
+  if (l_yvals.empty())
+    {
+      cout<<"Please load the files first!"<<endl;
+      return;
+    }
+  for (int fl = 0; fl < numfiles; fl++)
+    {
+      int l_numhid = l_numhids[fl];
+      for(int q = 0; q < l_numhid + 1; q++)
+	{
+	  if (!l_checkgrads[fl].empty())
+	    {
+	      l_checkgrads[fl].clear();
+	      l_checkdels[fl].clear();
+	    }
+	}
+    }
+  vector<mat> tr;
+  ld_dels.push_back(tr);
+  for (int i = 0; i < numfiles; i++)
+    {
+      ld_grads.push_back(tr);
+      ld_dels.push_back(tr);
+      ld_tgrads.push_back(tr);
+      l_saliencies.push_back(tr);
+      l_checksals.push_back(tr);
+    }
+  int trainmode = mode;
+  int rprop = 0;
+  vector<thread> l_bpthreads;
+  double rmax = tmax;
+  int lat_rprop = 0;
+  if ((trainmode != 0) && (trainmode != 1))
+    {
+      cout<<"Training mode can only be 0 or 1"<<endl;
+      return;
+    }
+  if ((numlatent >= 0) && (l_trained == 0))
+    {
+      l_numlatent = numlatent;
+      if (l_xvals.empty())
+	{
+	  for (int i = 0; i < file_nlines; i++)
+	    {
+	      l_xvals.push_back(randn<mat>(numlatent,1));
+	    }
+	}
+      else
+	{
+	  for (int i = 0; i < file_nlines; i++)
+	    {
+	      for (int j = 0; j < numlatent; j++)
+		{
+		  mat trnum = randn<mat>(1,1);
+		  (l_xvals.at(i)).insert_rows(0,trnum);
+		}
+	    }
+	}
+      l_numx = l_numx + numlatent;
+      for(int i = 0; i < numfiles; i++)
+	{
+	  l_numlayers[i].insert(l_numlayers[i].begin(),l_numx);
+	  l_tdels[i].push_back(zeros<mat>(l_numx,1));
+	  for(int j = 0; j < l_numhids[i] + 1; j++)
+	    {
+	      int rows = l_numlayers[i][j+1];
+	      int cols = l_numlayers[i][j];
+	      l_params[i].push_back(randn<mat>(rows,cols));
+	      l_tgrads[i].push_back(zeros<mat>(rows,cols));
+	      l_bias[i].push_back(randn<mat>(rows,1));
+	      l_tdels[i].push_back(zeros<mat>(rows,1));
+	    }
+	}
+    }
+  else
+    {
+      if (numlatent < 0)
+	{
+	  cout<<"Number of latent parameters must be greater than 1"<<endl;
+	  return;
+	}
+      else
+	{
+	  for(int i = 0; i < numfiles; i++)
+	    {
+	      l_tdels[i][0].fill(0);
+	      for (int j = 0; j < l_numhids[i] + 1; j++)
+		{
+		  l_tgrads[i][j].fill(0);
+		  l_tdels[i][j+1].fill(0);
+		}
+	    }
+	}
+    }
+  vector<double> lrates;
+  for(int i = 0; i < numfiles; i++)
+    {
+      double rate = 0.0001;
+      lrates.push_back(rate);
+    }
+  int tolcheck;
+  if (epoch < 0)
+    {
+      if (tol < 0)
+	{
+	  cout<<"Please enter a tolerence value!"<<endl;
+	  for (int i = 0; i < numfiles; i++)
+	    {
+	      l_params[i].clear();
+	      l_tgrads[i].clear();
+	      l_bias[i].clear();
+	      l_tdels[i].clear();
+	    }
+	  return;
+	}
+      tolcheck = 1;
+      epoch = 10;
+    }
+  else
+    {
+      tolcheck = 0;
+    }
+  if (gradd == 0)
+    {
+      for(int obd = 0; obd < 3; obd++)
+	{
+	  if (obd == 0)
+	    {
+	      for(int fl = 0; fl < numfiles; fl++)
+		{
+		  int l_numhid = l_numhids[fl];
+		  for(int j = 0; j < l_numhid + 1; j++)
+		    {
+		      int rows = l_numlayers[fl][j+1];
+		      int cols = l_numlayers[fl][j];
+		      l_saliencies[fl].push_back(ones<mat>(rows,cols));
+		    }
+		}
+	    }
+	  int c_epoch = 0;
+	  for (int k = 0; k < epoch; k++)
+	    {
+	      if (k == 0 && (trainmode == 1))
+		{
+		  cout<<"Initial error"<<endl;
+		  l_testall();
+		  cout<<endl;
+		}
+	      if (tolcheck == 1)
+		{
+		  k = -2;
+		}
+	      for (int i = 0; i < l_train; i++)
+		{
+		  int threadcount = 0;
+		  if (!l_bpthreads.empty())
+		    {
+		      l_bpthreads.clear();
+		    }
+		  if(obd == 0)
+		    {
+		      ls_saliencies.push_back(ones<mat>(l_numx,1));
+		    }
+		  for (int j = 0; j < numfiles; j++)
+		    {
+		      if (qmat == 1)
+			{
+			  if (Q_mat[i][j] == 1)
+			    {
+			      l_bpthreads.push_back(std::thread(&NNet::l_parallelbp,this,i,j));
+			      threadcount++;
+			    }
+			}
+		      else
+			{
+			  l_bpthreads.push_back(std::thread(&NNet::l_parallelbp,this,i,j));
+			  threadcount++;
+			}
+		    }
+		  for(int j = 0; j < threadcount; j++)
+		    {
+		      l_bpthreads[j].join();
+		    }
+		  for (int q = 0; q < numfiles; q++)
+		    {
+		      if (qmat == 1)
+			{
+			  if (Q_mat[i][q] == 1)
+			    {
+			      int lnumhid = l_numhids[q];
+			      l_tdels[q][0] = l_tdels[q][0] + l_dels[q][lnumhid + 1];
+			      for (int j = 0; j < lnumhid + 1; j++)
+				{
+				  l_tgrads[q][j] = l_tgrads[q][j] + l_grads[q][lnumhid-j];
+				  l_tdels[q][j+1] = l_tdels[q][j+1] + l_dels[q][lnumhid - j];
+				}
+			    }
+			}
+		      else
+			{
+			  int lnumhid = l_numhids[q];
+			  l_tdels[q][0] = l_tdels[q][0] + l_dels[q][lnumhid + 1];
+			  for (int j = 0; j < lnumhid + 1; j++)
+			    {
+			      l_tgrads[q][j] = l_tgrads[q][j] + l_grads[q][lnumhid-j];
+			      l_tdels[q][j+1] = l_tdels[q][j+1] + l_dels[q][lnumhid - j];
+			    }
+			}
+		    }
+		  mat lat_grads = zeros<mat>(numlatent,1);
+		  for (int q = 0; q < numfiles; q++)
+		    {
+		      if(qmat == 1)
+			{
+			  if (Q_mat[i][q] == 1)
+			    {
+			      for(int j = 0; j < numlatent; j++)
+				{
+				  lat_grads(j,0) = lat_grads(j,0) + l_tdels[q][0](j,0);
+				}
+			      l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
+			    }
+			}
+		      else
+			{
+			  for(int j = 0; j < numlatent; j++)
+			    {
+			      lat_grads(j,0) = lat_grads(j,0) + l_tdels[q][0](j,0);
+			    }
+			  l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
+			} 
+		    }
+		  if (lat_rprop == 0)
+		    {
+		      lat_checkgrads = lat_grads;
+		    }
+		  else
+		    {
+		      for(int j = 0; j < numlatent; j++)
+			{
+			  if (lat_checkgrads(j,0)*lat_grads(j,0) > 0)
+			    {
+			      if (lat_rprop == 1)
+				{
+				  double sign = copysign(1,lat_grads(j,0));
+				  lat_grads(j,0) = sign*1.2*0.1;
+				  lat_checkgrads(j,0) = lat_grads(j,0);
+				}
+			      else
+				{
+				  double sign = copysign(1,lat_grads(j,0));
+				  lat_grads(j,0) = 1.2*abs(lat_checkgrads(j,0));
+				  lat_grads(j,0) = min(lat_grads(j,0),rmax);
+				  lat_checkgrads(j,0) = sign*lat_grads(j,0);
+				  lat_grads(j,0) = sign*lat_grads(j,0);
+				}
+			    }
+			  else if ((lat_checkgrads(j,0)*lat_grads(j,0) < 0))
+			    {
+			      if(lat_rprop == 1)
+				{
+				  double sign = copysign(1,lat_grads(j,0));
+				  lat_grads(j,0) = sign*0.5*0.1;
+				  lat_checkgrads(j,0) = lat_grads(j,0);
+				}
+			      else
+				{
+				  double sign = copysign(1,lat_grads(j,0));
+				  double temp = 0.5*abs(lat_checkgrads(j,0));
+				  temp = max(temp,0.0000001);
+				  lat_checkgrads(j,0) = sign*temp;
+				  lat_grads(j,0) = sign*temp;
+				}
+			    }
+			  else if ((lat_checkgrads(j,0)*lat_grads(j,0) == 0))
+			    {
+			      if(lat_rprop == 1)
+				{
+				  double sign = copysign(1,lat_grads(j,0));
+				  lat_grads(j,0) =  sign*0.1;
+				}
+			      else
+				{
+				  double sign = copysign(1,lat_grads(j,0));
+				  lat_grads(j,0) =  sign*abs(lat_checkgrads(j,0));
+				}
+			    }
+			}
+		    }
+		  if (lat_rprop == 0)
+		    {
+		      for(int j = 0; j < numlatent; j++)
+			{
+			  l_xvals[i](j,0) = l_xvals[i](j,0) - (0.00001)*lat_grads(j,0);
+			  //l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
+			}
+		      l_xvals[i] = l_xvals[i]%ls_saliencies[i];
+		    }
+		  else
+		    {
+		      for(int j = 0; j < numlatent; j++)
+			{
+			  l_xvals[i](j,0) = l_xvals[i](j,0) - lat_grads(j,0);
+			  //l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
+			}
+		      l_xvals[i] = l_xvals[i]%ls_saliencies[i];
+		    }
+		  if (lat_rprop >= 1)
+		    {
+		      lat_rprop = 3;
+		    }
+		  else
+		    {
+		      lat_rprop++;
+		    }
+		}
+	      if (rprop == 0)
+		{
+		  for (int fl = 0; fl < numfiles; fl++)
+		    {
+		      int l_numhid = l_numhids[fl];
+		      for(int q = 0; q < l_numhid + 1; q++)
+			{
+			  l_checkgrads[fl].push_back(l_tgrads[fl][q]);
+			  l_checkdels[fl].push_back(l_tdels[fl][q+1]);
+			}
+		    }
+		}
+	      else
+		{
+		  for (int fl = 0; fl < numfiles; fl++)
+		    {
+		      int l_numhid = l_numhids[fl];
+		      for(int q = 0; q < l_numhid + 1; q++)
+			{
+			  int rows = l_checkgrads[fl][q].n_rows;
+			  int cols = l_checkgrads[fl][q].n_cols;
+			  for(int rw = 0; rw < rows; rw++)
+			    {
+			      for(int cl = 0; cl < cols; cl++)
+				{
+				  if (l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) > 0) 
+				    {
+				      //push up weight
+				      if (rprop == 1)
+					{
+					  double sign = copysign(1,l_tgrads[fl][q](rw,cl));
+					  l_tgrads[fl][q](rw,cl) = 0.1*1.2;
+					  l_tgrads[fl][q](rw,cl) = min(l_tgrads[fl][q](rw,cl),rmax);
+					  l_checkgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
+					  l_tgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
+					}
+				      else
+					{
+					  double sign = copysign(1,l_tgrads[fl][q](rw,cl));
+					  l_tgrads[fl][q](rw,cl) = sign*l_checkgrads[fl][q](rw,cl)*1.2;
+					  l_tgrads[fl][q](rw,cl) = min(l_tgrads[fl][q](rw,cl),rmax);
+					  l_checkgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
+					  l_tgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
+					}
+				    }
+				  else if ((l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) < 0))
+				    {
+				      //pushdown weight
+				      if (rprop == 1)
+					{
+					  double sign = copysign(1,l_tgrads[fl][q](rw,cl));
+					  l_tgrads[fl][q](rw,cl) = sign*abs(l_checkgrads[fl][q](rw,cl))*0.5;
+					  double temp;
+					  temp = 0.1*0.5;
+					  temp = max(temp,0.000001);
+					  l_checkgrads[fl][q](rw,cl) = sign*(temp);
+					}				    
+				      else
+					{
+					  double sign = copysign(1,l_tgrads[fl][q](rw,cl));
+					  l_tgrads[fl][q](rw,cl) = sign*abs(l_checkgrads[fl][q](rw,cl))*0.5;
+					  double temp;
+					  temp = l_checkgrads[fl][q](rw,cl)*0.5;
+					  temp = max(abs(temp),0.000001);
+					  l_checkgrads[fl][q](rw,cl) = sign*(temp);
+					}
+				    }
+				  else if ((l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) == 0))
+				    {
+				      if (rprop == 1)
+					{
+					  l_tgrads[fl][q](rw,cl) = 0.1*1.0*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
+					}
+				      else
+					{
+					  l_tgrads[fl][q](rw,cl) = abs(l_checkgrads[fl][q](rw,cl))*1.0*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
+					}
+				    }
+				}
+			    }
+			  //BIAS
+			  int brows = l_checkdels[fl][q].n_rows;
+			  int bcols = l_checkdels[fl][q].n_cols;
+			  for(int rw = 0; rw < brows; rw++)
+			    {
+			      for(int cl = 0; cl < bcols; cl++)
+				{
+				  if (l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) > 0)
+				    {
+				      //push up bias
+				      if (rprop == 1)
+					{
+					  double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
+					  l_tdels[fl][q+1](rw,cl) = 0.1*1.2;
+					  l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
+					  l_checkdels[fl][q](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
+					  l_tdels[fl][q+1](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
+					}
+				      else
+					{
+					  double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
+					  l_tdels[fl][q+1](rw,cl) = sign*l_checkdels[fl][q](rw,cl)*1.2;
+					  l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
+					  l_checkdels[fl][q](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
+					  l_tdels[fl][q+1](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
+					}
+				    }
+				  else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) < 0))
+				    {
+				      //pushdown bias
+				      if (rprop == 1)
+					{
+					  double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
+					  l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
+					  double temp;
+					  temp = 0.1*0.5;
+					  temp = max(abs(temp),0.000001);
+					  l_checkdels[fl][q](rw,cl) = sign*(temp);
+					}
+				      else
+					{
+					  double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
+					  l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
+					  double temp;
+					  temp = l_checkdels[fl][q](rw,cl)*0.5;
+					  temp = max(abs(temp),0.000001);
+					  l_checkdels[fl][q](rw,cl) = sign*(temp);
+					}
+				    }
+				  else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) == 0))
+				    {
+				      if (rprop == 1)
+					{
+					  l_tdels[fl][q+1](rw,cl) = 0.1*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
+					}
+				      else
+					{
+					  l_tdels[fl][q+1](rw,cl) = abs(l_checkdels[fl][q](rw,cl))*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
+					}
+				    }
+				}
+			    }
+			}
+		    }
+		}
+	      for(int t = 0; t < numfiles; t++)
+		{
+		  int lnumhid = l_numhids[t];
+		  for (int l = 0; l < lnumhid + 1; l++)
+		    {
+		      if (rprop == 0)
+			{
+			  l_params[t][l] = l_params[t][l] - 0.00000001*l_tgrads[t][l] - 0.00001*l_params[t][l];
+			  l_params[t][l] = l_params[t][l]%l_saliencies[t][l];
+			  l_bias[t][l] = l_bias[t][l] - 0.00000001*l_tdels[t][l+1];
+			  l_tgrads[t][l].fill(0);
+			  l_tdels[t][l+1].fill(0);
+			}
+		      else
+			{
+			  l_params[t][l] = l_params[t][l] - l_tgrads[t][l];
+			  l_params[t][l] = l_params[t][l]%l_saliencies[t][l];
+			  l_bias[t][l] = l_bias[t][l] - l_tdels[t][l+1];
+			  l_tgrads[t][l].fill(0);
+			  l_tdels[t][l+1].fill(0);
+			}
+		    }
+		}
+	      if (rprop > 1)
+		{
+		  rprop = 3;
+		}
+	      else
+		{
+		  rprop++;
+		}
+	      if (tolcheck == 0)
+		{
+		  if (trainmode == 0)
+		    {
+		      double pc = ((double)k/(double)epoch)*100;
+		      cout<<"\r"<<pc<<"%"<<flush;
+		    }
+		  else if (trainmode == 1)
+		    {
+		      cout<<((double)k/(double)epoch)*100<<"%"<<endl;
+		      l_testall();
+		      cout<<endl;
+		    }
+		}
+	      else
+		{
+		  if (trainmode == 0)
+		    {
+		      cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		      l_testall(1);
+		      if (l_error <= tol)
+			{
+			  cout<<"Convergence reached!"<<endl;
+			  return;
+			}
+		      c_epoch++;
+		    }
+		  else if (trainmode == 1)
+		    {
+		      cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		      l_testall();
+		      if (l_error <= tol)
+			{
+			  cout<<"Convergence reached!"<<endl;
+			  return;
+			}
+		      c_epoch++;
+		      cout<<endl;
+		    }
+		}
+	    }
+	  OBD_init();
+	  for(int fl = 0; fl < numfiles; fl++)
+	    {
+	      l_optimalBD(fl);
+	    }
+	  ls_optimalBD();
+	}
+    }
+  else if (gradd == 1)
+    {
+      int c_epoch = 0;
+      cout<<"Initializing Stochastic Gradient Descent"<<endl;
+      double pc = 0;
+      vector<int> idxs;
+      for (int i = 0; i < l_train; i++)
+	{
+	  idxs.push_back(i);
+	  ls_saliencies.push_back(ones<mat>(l_numx,1));
+	}
+      random_shuffle(idxs.begin(),idxs.end());
+      for(int obd = 0; obd < 3; obd++)
+	{
+	  if (obd == 0)
+	    {
+	      for(int fl = 0; fl < numfiles; fl++)
+		{
+		  int l_numhid = l_numhids[fl];
+		  for(int j = 0; j < l_numhid + 1; j++)
+		    {
+		      int rows = l_numlayers[fl][j+1];
+		      int cols = l_numlayers[fl][j];
+		      l_saliencies[fl].push_back(ones<mat>(rows,cols));
+		    }
+		}
+	    }
+	  for (int i = 0; i < epoch; i++)
+	    {
+	      if (i == 0 && (trainmode == 1))
+		{
+		  cout<<"Initial error"<<endl;
+		  l_testall();
+		  cout<<endl;
+		}
+	      if (tolcheck == 1)
+		{
+		  i = -2;
+		}
+	      int step = 0;
+	      while (step < l_train)
+		{
+		  int k = step;
+		  step = min(step + 20,l_train);
+		  for(;k < step; k++)
+		    {
+		      if (!l_bpthreads.empty())
+			{
+			  l_bpthreads.clear();
+			}
+		      int threadcount = 0;
+		      for (int t = 0; t < numfiles; t++)
+			{
+			  if(qmat == 1)
+			    {
+			      if (Q_mat[idxs.at(k)][t] == 1)
+				{
+				  l_bpthreads.push_back(thread(&NNet::l_parallelbp,this,idxs.at(k),t));
+				  threadcount++;
+				}
+			    }
+			  else
+			    {
+			      l_bpthreads.push_back(thread(&NNet::l_parallelbp,this,idxs.at(k),t));
+			      threadcount++;
+			    }
+			}
+		      for(int t = 0; t < threadcount; t++)
+			{
+			  l_bpthreads[t].join();
+			}
+		      for (int q = 0; q < numfiles; q++)
+			{
+			  if (qmat == 1)
+			    {
+			      if (Q_mat[idxs.at(k)][q] == 1)
+				{
+				  int lnumhid = l_numhids[q];
+				  l_tdels[q][0] = l_tdels[q][0] + l_dels[q][lnumhid + 1];
+				  for(int j = 0; j < lnumhid + 1; j++)
+				    {
+				      l_tgrads[q].at(j) = l_tgrads[q].at(j) + l_grads[q].at(lnumhid - j);
+				      l_tdels[q].at(j+1) = l_tdels[q].at(j+1) + l_dels[q].at(lnumhid -j);
+				    }
+				}
+			    }
+			  else
+			    {
+			      int lnumhid = l_numhids[q];
+			      l_tdels[q][0] = l_tdels[q][0] + l_dels[q][lnumhid + 1];
+			      for(int j = 0; j < lnumhid + 1; j++)
+				{
+				  l_tgrads[q].at(j) = l_tgrads[q].at(j) + l_grads[q].at(lnumhid - j);
+				  l_tdels[q].at(j+1) = l_tdels[q].at(j+1) + l_dels[q].at(lnumhid -j);
+				}
+			    }
+			}
+		      mat lat_grads = zeros<mat>(numlatent,1);
+		      for (int q = 0; q < numfiles; q++)
+			{
+			  if(qmat == 1)
+			    {
+			      if (Q_mat[idxs.at(k)][q] == 1)
+				{
+				  for(int j = 0; j < numlatent; j++)
+				    {
+				      lat_grads(j,0) = lat_grads(j,0) + l_tdels[q][0](j,0);
+				    }
+				  l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
+				}
+			    }
+			  else
+			    {
+			      for(int j = 0; j < numlatent; j++)
+				{
+				  lat_grads(j,0) = lat_grads(j,0) + l_tdels[q][0](j,0);
+				}
+			      l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
+			    } 
+			}
+		      if (lat_rprop == 0)
+			{
+			  lat_checkgrads = lat_grads;
+			}
+		      else
+			{
+			  for(int j = 0; j < numlatent; j++)
+			    {
+			      if (lat_checkgrads(j,0)*lat_grads(j,0) > 0)
+				{
+				  if (lat_rprop == 1)
+				    {
+				      double sign = copysign(1,lat_grads(j,0));
+				      lat_grads(j,0) = sign*1.2*0.1;
+				      lat_checkgrads(j,0) = lat_grads(j,0);
+				    }
+				  else
+				    {
+				      double sign = copysign(1,lat_grads(j,0));
+				      lat_grads(j,0) = 1.2*abs(lat_checkgrads(j,0));
+				      lat_grads(j,0) = min(lat_grads(j,0),rmax);
+				      lat_checkgrads(j,0) = sign*lat_grads(j,0);
+				      lat_grads(j,0) = sign*lat_grads(j,0);
+				    }
+				}
+			      else if ((lat_checkgrads(j,0)*lat_grads(j,0) < 0))
+				{
+				  if(lat_rprop == 1)
+				    {
+				      double sign = copysign(1,lat_grads(j,0));
+				      lat_grads(j,0) = sign*0.5*0.1;
+				      lat_checkgrads(j,0) = lat_grads(j,0);
+				    }
+				  else
+				    {
+				      double sign = copysign(1,lat_grads(j,0));
+				      double temp = 0.5*abs(lat_checkgrads(j,0));
+				      temp = max(temp,0.0000001);
+				      lat_checkgrads(j,0) = sign*temp;
+				      lat_grads(j,0) = sign*temp;
+				    }
+				}
+			      else if ((lat_checkgrads(j,0)*lat_grads(j,0) == 0))
+				{
+				  if(lat_rprop == 1)
+				    {
+				      double sign = copysign(1,lat_grads(j,0));
+				      lat_grads(j,0) =  sign*0.1;
+				    }
+				  else
+				    {
+				      double sign = copysign(1,lat_grads(j,0));
+				      lat_grads(j,0) =  sign*abs(lat_checkgrads(j,0));
+				    }
+				}
+			    }
+			}
+		      if (lat_rprop == 0)
+			{
+			  for(int j = 0; j < numlatent; j++)
+			    {
+			      l_xvals[idxs.at(k)](j,0) = l_xvals[idxs.at(k)](j,0) - (0.00001)*lat_grads(j,0);
+			      //l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
+			    }
+			  l_xvals[idxs.at(k)] = l_xvals[idxs.at(k)]%ls_saliencies[idxs.at(k)];
+			}
+		      else
+			{
+			  for(int j = 0; j < numlatent; j++)
+			    {
+			      l_xvals[idxs.at(k)](j,0) = l_xvals[idxs.at(k)](j,0) - lat_grads(j,0);
+			      //l_tdels[q][0].fill(0); //Doing this is textbook but commenting this out just works much much better
+			    }
+			  l_xvals[idxs.at(k)] = l_xvals[idxs.at(k)]%ls_saliencies[idxs.at(k)];
+			}
+		      if (lat_rprop >= 1)
+			{
+			  lat_rprop = 3;
+			}
+		      else
+			{
+			  lat_rprop++;
+			}
+		    }
+		  if (rprop == 0)
+		    {
+		      for (int fl = 0; fl < numfiles; fl++)
+			{
+			  int l_numhid = l_numhids[fl];
+			  for(int q = 0; q < l_numhid + 1; q++)
+			    {
+			      l_checkgrads[fl].push_back(l_tgrads[fl][q]);
+			      l_checkdels[fl].push_back(l_tdels[fl][q+1]);
+			    }
+			}
+		    }
+		  else
+		    {
+		      for (int fl = 0; fl < numfiles; fl++)
+			{
+			  int l_numhid = l_numhids[fl];
+			  for(int q = 0; q < l_numhid + 1; q++)
+			    {
+			      int rows = l_checkgrads[fl][q].n_rows;
+			      int cols = l_checkgrads[fl][q].n_cols;
+			      for(int rw = 0; rw < rows; rw++)
+				{
+				  for(int cl = 0; cl < cols; cl++)
+				    {
+				      if (l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) > 0) 
+					{
+					  //push up weight
+					  if (rprop == 1)
+					    {
+					      double sign = copysign(1,l_tgrads[fl][q](rw,cl));
+					      l_tgrads[fl][q](rw,cl) = 0.1*1.2;
+					      l_tgrads[fl][q](rw,cl) = min(l_tgrads[fl][q](rw,cl),rmax);
+					      l_checkgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
+					      l_tgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
+					    }
+					  else
+					    {
+					      double sign = copysign(1,l_tgrads[fl][q](rw,cl));
+					      l_tgrads[fl][q](rw,cl) = sign*l_checkgrads[fl][q](rw,cl)*1.2;
+					      l_tgrads[fl][q](rw,cl) = min(l_tgrads[fl][q](rw,cl),rmax);
+					      l_checkgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
+					      l_tgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
+					    }
+					}
+				      else if ((l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) < 0))
+					{
+					  //pushdown weight
+					  if (rprop == 1)
+					    {
+					      double sign = copysign(1,l_tgrads[fl][q](rw,cl));
+					      l_tgrads[fl][q](rw,cl) = sign*abs(l_checkgrads[fl][q](rw,cl))*0.5;
+					      double temp;
+					      temp = 0.1*0.5;
+					      temp = max(temp,0.000001);
+					      l_checkgrads[fl][q](rw,cl) = sign*(temp);
+					    }
+					  else
+					    {
+					      double sign = copysign(1,l_tgrads[fl][q](rw,cl));
+					      l_tgrads[fl][q](rw,cl) = sign*abs(l_checkgrads[fl][q](rw,cl))*0.5;
+					      double temp;
+					      temp = l_checkgrads[fl][q](rw,cl)*0.5;
+					      temp = max(abs(temp),0.000001);
+					      l_checkgrads[fl][q](rw,cl) = sign*(temp);
+					    }
+					}
+				      else if ((l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) == 0))
+					{
+					  if (rprop == 1)
+					    {
+					      l_tgrads[fl][q](rw,cl) = 0.1*1.0*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
+					    }
+					  else
+					    {
+					      l_tgrads[fl][q](rw,cl) = abs(l_checkgrads[fl][q](rw,cl))*1.0*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
+					    }
+					}
+				    }
+				}
+			      //BIAS
+			      int brows = l_checkdels[fl][q].n_rows;
+			      int bcols = l_checkdels[fl][q].n_cols;
+			      for(int rw = 0; rw < brows; rw++)
+				{
+				  for(int cl = 0; cl < bcols; cl++)
+				    {
+				      if (l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) > 0)
+					{
+					  if (rprop == 1)
+					    {
+					      double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
+					      l_tdels[fl][q+1](rw,cl) = 0.1*1.2;
+					      l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
+					      l_checkdels[fl][q](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
+					      l_tdels[fl][q+1](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
+					    }
+					  else
+					    {
+					      double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
+					      l_tdels[fl][q+1](rw,cl) = sign*l_checkdels[fl][q](rw,cl)*1.2;
+					      l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
+					      l_checkdels[fl][q](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
+					      l_tdels[fl][q+1](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
+					    }
+					}
+				      else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) < 0))
+					{
+					  //pushdown bias
+					  if (rprop == 1)
+					    {
+					      double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
+					      l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
+					      double temp;
+					      temp = 0.1*0.5;
+					      temp = max(abs(temp),0.000001);
+					      l_checkdels[fl][q](rw,cl) = sign*(temp);
+					    }
+					  else
+					    {
+					      double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
+					      l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
+					      double temp;
+					      temp = l_checkdels[fl][q](rw,cl)*0.5;
+					      temp = max(abs(temp),0.000001);
+					      l_checkdels[fl][q](rw,cl) = sign*(temp);
+					    }
+					}
+				      else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) == 0))
+					{
+					  if (rprop == 1)
+					    {
+					      l_tdels[fl][q+1](rw,cl) = 0.1*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
+					    }
+					  else
+					    {
+					      l_tdels[fl][q+1](rw,cl) = abs(l_checkdels[fl][q](rw,cl))*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
+					    }
+					}
+				    }
+				}
+			    }
+			}
+		    }
+		  for(int q = 0; q < numfiles; q++)
+		    {
+		      int lnumhid = l_numhids[q];
+		      for (int j = 0; j < lnumhid + 1; j++)
+			{
+			  //the below only applies if regression is going.....
+			  if (rprop == 0)
+			    {
+			      l_params[q][j] = l_params[q][j] - (0.00001/(double)l_train)*l_tgrads[q][j] - 0.0001*l_params[q][j];
+			      l_params[q][j] = l_params[q][j]%l_saliencies[q][j];
+			      l_bias[q][j] = l_bias[q][j] - (0.00001/(double)l_train)*l_tdels[q][j+1];
+			      l_tgrads[q][j].fill(0.0);
+			      l_tdels[q][j+1].fill(0.0);
+			    }
+			  else
+			    {
+			      l_params[q][j] = l_params[q][j] - l_tgrads[q][j];
+			      l_params[q][j] = l_params[q][j]%l_saliencies[q][j];
+			      l_bias[q][j] = l_bias[q][j] - l_tdels[q][j+1];
+			      l_tgrads[q][j].fill(0.0);
+			      l_tdels[q][j+1].fill(0.0);
+			    }
+			}
+		    }
+		  if (rprop >= 1)
+		    {
+		      rprop = 3;
+		    }
+		  else
+		    {
+		      rprop++;
+		    }
+		}
+	      if (tolcheck == 0)
+		{
+		  if (trainmode == 0)
+		    {
+		      pc = ((double)i/(double)epoch)*100;
+		      cout<<"\r"<<pc<<"%"<<flush;
+		    }
+		  else if (trainmode == 1)
+		    {
+		      cout<<((double)i/(double)epoch)*100<<"%"<<endl;
+		      l_testall();
+		      cout<<endl;
+		    }
+		}
+	      else
+		{
+		  if (trainmode == 0)
+		    {
+		      cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		      l_testall(1);
+		      if (l_error <= tol)
+			{
+			  cout<<"Convergence reached!"<<endl;
+		      return;
+			}
+		      c_epoch++;
+		    }
+		  else if (trainmode == 1)
+		    {
+		      cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		      l_testall();
+		      if (l_error <= tol)
+			{
+			  cout<<"Convergence reached!"<<endl;
+			  return;
+			}
+		      c_epoch++;
+		      cout<<endl;
+		    }
+		}
+	    }
+	   OBD_init();
+	  for(int fl = 0; fl < numfiles; fl++)
+	    {
+	      l_optimalBD(fl);
+	    }
+	  ls_optimalBD();
+	}
+    }
+  l_trained++;
+  cout<<endl;
+  return;
+}

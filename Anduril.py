@@ -141,6 +141,14 @@ class Anduril():
             print "Invalid input!"
             return
 
+    def ld_trainrprop(self,numlatent,tmax = 15.0,mode = 0, tol = -1.0):
+        if (type(numlatent) == int) and (type(tmax) == float) and (type(mode) == int) and (type(tol) == float):
+            self.Net.ld_trainrprop(numlatent,tmax,mode,tol)
+            return
+        else:
+            print "Invalid input!"
+            return
+
     def testvoids(self,mode):
         if (type(mode) == int):
             self.Net.testvoids(mode)

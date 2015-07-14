@@ -41,6 +41,7 @@ class NNet
   void ls_savenet(string names, string in_name);
   void test_data(string in_filename, string out_filename, string netname, string sep = ",");
   void l_trainrprop(int numlatent,double tmax = 1.0, int mode = 0, double tol = -1);
+  void ld_trainrprop(int numlatent, double tmax = 1.0, int mode = 0, double tol = -1);
   void testvoids(int mode);
   void l_funcarch(void);
  private:
@@ -69,6 +70,10 @@ class NNet
   void lsavenets(string netname,int index);
   void l_testall(int mode = 0);
   void testfile(string filename,int verbose = 0,int ffmode = -1, string sep1 = ",", string sep2 = " ");
+  void ld_backprop(mat x, mat y, int gpos);
+  void OBD_init(void);
+  void l_optimalBD(int pos);
+  void ls_optimalBD(void);
   vector<mat> params;
   vector<mat> bias;
   vector<mat> velocity;
@@ -88,13 +93,20 @@ class NNet
   vector< vector<mat> > l_activ;
   vector< vector<mat> > l_sums;
   vector< vector<mat> > l_grads;
+  vector< vector<mat> > ld_grads;
   vector< vector<mat> > l_dels;
+  vector< vector<mat> > ld_dels;
   vector< vector<mat> > l_tgrads;
   vector< vector<mat> > l_tdels;
   vector< vector<mat> > l_velocity;
   vector< vector<mat> > l_checkgrads;
   vector< vector<mat> > l_checkdels;
-  //vector<std::thread> l_bpthreads;
+  vector< vector<mat> > l_saliencies;
+  vector< vector<mat> > l_checksals;
+  vector< vector<mat> >ld_tgrads;
+  vector<mat> ld_tdels;
+  vector<mat> ls_saliencies;
+  vector<mat> ls_checksals;
   mat lat_checkgrads;
   vector< vector<int> > Q_mat; 
   int file_nlines;
@@ -102,6 +114,7 @@ class NNet
   int numfiles;
   int l_numx;
   int qmat;
+  int l_numlatent;
   //Learning rate
   //#//long double alpha;
   //Momentum coeff
@@ -167,6 +180,7 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads9,l_trainrprop,1,4)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads10,train_rprop,0,3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads11,ls_init,4,5)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads12,ls_load,1,4)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads13,ld_trainrprop,1,4)
 
 
 
@@ -195,6 +209,7 @@ BOOST_PYTHON_MODULE(NNet)
     .def("l_funcarch", &NNet::l_funcarch)
     .def("ls_init",&NNet::ls_init,NNet_overloads11())
     .def("ls_load",&NNet::ls_load,NNet_overloads12())
+    .def("ld_trainrprop",&NNet::ld_trainrprop,NNet_overloads13())
     ;
 }
 
