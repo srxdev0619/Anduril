@@ -877,7 +877,7 @@ void NNet::train_net(double lrate, int mode, int verbose)
 }
 
 
-void NNet::g_update(int r_prop, double r_max)
+void NNet::update(int r_prop, double r_max)
 {
   int rprop = r_prop;
   double rmax = r_max;
@@ -1080,7 +1080,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		    }
 		}
 	    }
-	  g_update(rprop,rmax);
+	  update(rprop,rmax);
 	  for (int l = 0; l < numhid + 1; l++)
 	    {
 	      if (rprop == 0)
@@ -1203,7 +1203,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 			}
 		    }
 		}
-	      g_update(rprop,rmax);
+	      update(rprop,rmax);
 	      for (int j = 0; j < numhid + 1; j++)
 		{
 		  if (rprop == 0)
