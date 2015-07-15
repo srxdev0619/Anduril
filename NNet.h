@@ -75,6 +75,7 @@ class NNet
   void l_optimalBD(int pos);
   void ls_optimalBD(void);
   void l_update(int r_prop, double r_max);
+  void g_update(int r_prop, double r_max);
   vector<mat> params;
   vector<mat> bias;
   vector<mat> velocity;
