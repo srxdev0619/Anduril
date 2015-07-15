@@ -3939,6 +3939,159 @@ void NNet::testvoids(int mode)
 
 
 
+void NNet::l_update(int r_prop, double r_max)
+{
+  double rmax = r_max;
+  int rprop = r_prop;
+  if (rprop == 0)
+    {
+      for (int fl = 0; fl < numfiles; fl++)
+	{
+	  int l_numhid = l_numhids[fl];
+	  for(int q = 0; q < l_numhid + 1; q++)
+	    {
+	      l_checkgrads[fl].push_back(l_tgrads[fl][q]);
+	      l_checkdels[fl].push_back(l_tdels[fl][q+1]);
+	    }
+	}
+    }
+  else
+    {
+      for (int fl = 0; fl < numfiles; fl++)
+	{
+	  int l_numhid = l_numhids[fl];
+	  for(int q = 0; q < l_numhid + 1; q++)
+	    {
+	      int rows = l_checkgrads[fl][q].n_rows;
+	      int cols = l_checkgrads[fl][q].n_cols;
+	      for(int rw = 0; rw < rows; rw++)
+		{
+		   for(int cl = 0; cl < cols; cl++)
+		     {
+		       if (l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) > 0) 
+			 {
+			   //push up weight
+			   if (rprop == 1)
+			     {
+			       double sign = copysign(1,l_tgrads[fl][q](rw,cl));
+			       l_tgrads[fl][q](rw,cl) = 0.1*1.2;
+			       l_tgrads[fl][q](rw,cl) = min(l_tgrads[fl][q](rw,cl),rmax);
+			       l_checkgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
+			       l_tgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
+			     }
+			   else
+			     {
+			       double sign = copysign(1,l_tgrads[fl][q](rw,cl));
+			       l_tgrads[fl][q](rw,cl) = sign*l_checkgrads[fl][q](rw,cl)*1.2;
+			       l_tgrads[fl][q](rw,cl) = min(l_tgrads[fl][q](rw,cl),rmax);
+			       l_checkgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
+			       l_tgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
+			     }
+			 }
+		       else if ((l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) < 0))
+			 {
+			   //pushdown weight
+			   if (rprop == 1)
+			     {
+			       double sign = copysign(1,l_tgrads[fl][q](rw,cl));
+			       l_tgrads[fl][q](rw,cl) = sign*abs(l_checkgrads[fl][q](rw,cl))*0.5;
+			       double temp;
+			       temp = 0.1*0.5;
+			       temp = max(temp,0.000001);
+			       l_checkgrads[fl][q](rw,cl) = sign*(temp);
+			     }				    
+			   else
+			     {
+			       double sign = copysign(1,l_tgrads[fl][q](rw,cl));
+			       l_tgrads[fl][q](rw,cl) = sign*abs(l_checkgrads[fl][q](rw,cl))*0.5;
+			       double temp;
+			       temp = l_checkgrads[fl][q](rw,cl)*0.5;
+			       temp = max(abs(temp),0.000001);
+			       l_checkgrads[fl][q](rw,cl) = sign*(temp);
+			     }
+			 }
+		       else if ((l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) == 0))
+			 {
+			   if (rprop == 1)
+			     {
+			       l_tgrads[fl][q](rw,cl) = 0.1*1.0*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
+			     }
+			   else
+			     {
+			       l_tgrads[fl][q](rw,cl) = abs(l_checkgrads[fl][q](rw,cl))*1.0*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
+			     }
+			 }
+		     }
+		 }
+	       //BIAS
+	       int brows = l_checkdels[fl][q].n_rows;
+	       int bcols = l_checkdels[fl][q].n_cols;
+	       for(int rw = 0; rw < brows; rw++)
+		 {
+		   for(int cl = 0; cl < bcols; cl++)
+		     {
+		       if (l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) > 0)
+			 {
+			   //push up bias
+			   if (rprop == 1)
+			     {
+			       double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
+			       l_tdels[fl][q+1](rw,cl) = 0.1*1.2;
+			       l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
+			       l_checkdels[fl][q](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
+			       l_tdels[fl][q+1](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
+			     }
+			   else
+			     {
+			       double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
+			       l_tdels[fl][q+1](rw,cl) = sign*l_checkdels[fl][q](rw,cl)*1.2;
+			       l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
+			       l_checkdels[fl][q](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
+			       l_tdels[fl][q+1](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
+			     }
+			 }
+		       else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) < 0))
+			 {
+			   //pushdown bias
+			   if (rprop == 1)
+			     {
+			       double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
+			       l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
+			       double temp;
+			       temp = 0.1*0.5;
+			       temp = max(abs(temp),0.000001);
+			       l_checkdels[fl][q](rw,cl) = sign*(temp);
+			     }
+			   else
+			     {
+			       double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
+			       l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
+			       double temp;
+			       temp = l_checkdels[fl][q](rw,cl)*0.5;
+			       temp = max(abs(temp),0.000001);
+			       l_checkdels[fl][q](rw,cl) = sign*(temp);
+			     }
+			 }
+		       else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) == 0))
+			 {
+			   if (rprop == 1)
+			     {
+			       l_tdels[fl][q+1](rw,cl) = 0.1*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
+			     }
+			   else
+			     {
+			       l_tdels[fl][q+1](rw,cl) = abs(l_checkdels[fl][q](rw,cl))*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
+			     }
+			 }
+		     }
+		 }
+	     }
+	 }
+     }
+}
+
+
+
 //RPROP for latent parameter learning
 void NNet::l_trainrprop(int numlatent, double tmax, int mode, double tol)
 {
@@ -4226,151 +4379,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode, double tol)
 		  lat_rprop++;
 		}
 	    }
-	  if (rprop == 0)
-	    {
-	      for (int fl = 0; fl < numfiles; fl++)
-		{
-		  int l_numhid = l_numhids[fl];
-		  for(int q = 0; q < l_numhid + 1; q++)
-		    {
-		      l_checkgrads[fl].push_back(l_tgrads[fl][q]);
-		      l_checkdels[fl].push_back(l_tdels[fl][q+1]);
-		    }
-		}
-	    }
-	  else
-	    {
-	      for (int fl = 0; fl < numfiles; fl++)
-		{
-		  int l_numhid = l_numhids[fl];
-		  for(int q = 0; q < l_numhid + 1; q++)
-		    {
-		      int rows = l_checkgrads[fl][q].n_rows;
-		      int cols = l_checkgrads[fl][q].n_cols;
-		      for(int rw = 0; rw < rows; rw++)
-			{
-			  for(int cl = 0; cl < cols; cl++)
-			    {
-			      if (l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) > 0) 
-				{
-				  //push up weight
-				  if (rprop == 1)
-				    {
-				      double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-				      l_tgrads[fl][q](rw,cl) = 0.1*1.2;
-				      l_tgrads[fl][q](rw,cl) = min(l_tgrads[fl][q](rw,cl),rmax);
-				      l_checkgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-				      l_tgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-				    }
-				  else
-				    {
-				      double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-				      l_tgrads[fl][q](rw,cl) = sign*l_checkgrads[fl][q](rw,cl)*1.2;
-				      l_tgrads[fl][q](rw,cl) = min(l_tgrads[fl][q](rw,cl),rmax);
-				      l_checkgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-				      l_tgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-				    }
-				}
-			      else if ((l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) < 0))
-				{
-				  //pushdown weight
-				  if (rprop == 1)
-				    {
-				      double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-				      l_tgrads[fl][q](rw,cl) = sign*abs(l_checkgrads[fl][q](rw,cl))*0.5;
-				      double temp;
-				      temp = 0.1*0.5;
-				      temp = max(temp,0.000001);
-				      l_checkgrads[fl][q](rw,cl) = sign*(temp);
-				    }				    
-				  else
-				    {
-				      double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-				      l_tgrads[fl][q](rw,cl) = sign*abs(l_checkgrads[fl][q](rw,cl))*0.5;
-				      double temp;
-				      temp = l_checkgrads[fl][q](rw,cl)*0.5;
-				      temp = max(abs(temp),0.000001);
-				      l_checkgrads[fl][q](rw,cl) = sign*(temp);
-				    }
-				}
-			      else if ((l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) == 0))
-				{
-				  if (rprop == 1)
-				    {
-				      l_tgrads[fl][q](rw,cl) = 0.1*1.0*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
-				    }
-				  else
-				    {
-				      l_tgrads[fl][q](rw,cl) = abs(l_checkgrads[fl][q](rw,cl))*1.0*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
-				    }
-				}
-			    }
-			}
-		      //BIAS
-		      int brows = l_checkdels[fl][q].n_rows;
-		      int bcols = l_checkdels[fl][q].n_cols;
-		      for(int rw = 0; rw < brows; rw++)
-			{
-			  for(int cl = 0; cl < bcols; cl++)
-			    {
-			      if (l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) > 0)
-				{
-				  //push up bias
-				  if (rprop == 1)
-				    {
-				      double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-				      l_tdels[fl][q+1](rw,cl) = 0.1*1.2;
-				      l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
-				      l_checkdels[fl][q](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-				      l_tdels[fl][q+1](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-				    }
-				  else
-				    {
-				      double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-				      l_tdels[fl][q+1](rw,cl) = sign*l_checkdels[fl][q](rw,cl)*1.2;
-				      l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
-				      l_checkdels[fl][q](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-				      l_tdels[fl][q+1](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-				    }
-				}
-			      else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) < 0))
-				{
-				  //pushdown bias
-				  if (rprop == 1)
-				    {
-				      double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-				      l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
-				      double temp;
-				      temp = 0.1*0.5;
-				      temp = max(abs(temp),0.000001);
-				      l_checkdels[fl][q](rw,cl) = sign*(temp);
-				    }
-				  else
-				    {
-				      double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-				      l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
-				      double temp;
-				      temp = l_checkdels[fl][q](rw,cl)*0.5;
-				      temp = max(abs(temp),0.000001);
-				      l_checkdels[fl][q](rw,cl) = sign*(temp);
-				    }
-				}
-			      else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) == 0))
-				{
-				  if (rprop == 1)
-				    {
-				      l_tdels[fl][q+1](rw,cl) = 0.1*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
-				    }
-				  else
-				    {
-				      l_tdels[fl][q+1](rw,cl) = abs(l_checkdels[fl][q](rw,cl))*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
-				    }
-				}
-			    }
-			}
-		    }
-		}
-	    }
+	  l_update(rprop,rmax);
 	  for(int t = 0; t < numfiles; t++)
 	    {
 	      int lnumhid = l_numhids[t];
@@ -4628,150 +4637,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode, double tol)
 		      lat_rprop++;
 		    }
 		}
-	      if (rprop == 0)
-		{
-		  for (int fl = 0; fl < numfiles; fl++)
-		    {
-		      int l_numhid = l_numhids[fl];
-		      for(int q = 0; q < l_numhid + 1; q++)
-			{
-			  l_checkgrads[fl].push_back(l_tgrads[fl][q]);
-			  l_checkdels[fl].push_back(l_tdels[fl][q+1]);
-			}
-		    }
-		}
-	      else
-		{
-		  for (int fl = 0; fl < numfiles; fl++)
-		    {
-		      int l_numhid = l_numhids[fl];
-		      for(int q = 0; q < l_numhid + 1; q++)
-			{
-			  int rows = l_checkgrads[fl][q].n_rows;
-			  int cols = l_checkgrads[fl][q].n_cols;
-			  for(int rw = 0; rw < rows; rw++)
-			    {
-			      for(int cl = 0; cl < cols; cl++)
-				{
-				  if (l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) > 0) 
-				    {
-				      //push up weight
-				      if (rprop == 1)
-					{
-					  double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-					  l_tgrads[fl][q](rw,cl) = 0.1*1.2;
-					  l_tgrads[fl][q](rw,cl) = min(l_tgrads[fl][q](rw,cl),rmax);
-					  l_checkgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-					  l_tgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-					}
-				      else
-					{
-					  double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-					  l_tgrads[fl][q](rw,cl) = sign*l_checkgrads[fl][q](rw,cl)*1.2;
-					  l_tgrads[fl][q](rw,cl) = min(l_tgrads[fl][q](rw,cl),rmax);
-					  l_checkgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-					  l_tgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-					}
-				    }
-				  else if ((l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) < 0))
-				    {
-				      //pushdown weight
-				      if (rprop == 1)
-					{
-					  double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-					  l_tgrads[fl][q](rw,cl) = sign*abs(l_checkgrads[fl][q](rw,cl))*0.5;
-					  double temp;
-					  temp = 0.1*0.5;
-					  temp = max(temp,0.000001);
-					  l_checkgrads[fl][q](rw,cl) = sign*(temp);
-					}
-				      else
-					{
-					  double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-					  l_tgrads[fl][q](rw,cl) = sign*abs(l_checkgrads[fl][q](rw,cl))*0.5;
-					  double temp;
-					  temp = l_checkgrads[fl][q](rw,cl)*0.5;
-					  temp = max(abs(temp),0.000001);
-					  l_checkgrads[fl][q](rw,cl) = sign*(temp);
-					}
-				    }
-				  else if ((l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) == 0))
-				    {
-				      if (rprop == 1)
-					{
-					  l_tgrads[fl][q](rw,cl) = 0.1*1.0*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
-					}
-				      else
-					{
-					  l_tgrads[fl][q](rw,cl) = abs(l_checkgrads[fl][q](rw,cl))*1.0*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
-					}
-				    }
-				}
-			    }
-			  //BIAS
-			  int brows = l_checkdels[fl][q].n_rows;
-			  int bcols = l_checkdels[fl][q].n_cols;
-			  for(int rw = 0; rw < brows; rw++)
-			    {
-			      for(int cl = 0; cl < bcols; cl++)
-				{
-				  if (l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) > 0)
-				    {
-				      if (rprop == 1)
-					{
-					  double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-					  l_tdels[fl][q+1](rw,cl) = 0.1*1.2;
-					  l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
-					  l_checkdels[fl][q](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-					  l_tdels[fl][q+1](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-					}
-				      else
-					{
-					  double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-					  l_tdels[fl][q+1](rw,cl) = sign*l_checkdels[fl][q](rw,cl)*1.2;
-					  l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
-					  l_checkdels[fl][q](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-					  l_tdels[fl][q+1](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-					}
-				    }
-				  else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) < 0))
-				    {
-				      //pushdown bias
-				      if (rprop == 1)
-					{
-					  double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-					  l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
-					  double temp;
-					  temp = 0.1*0.5;
-					  temp = max(abs(temp),0.000001);
-					  l_checkdels[fl][q](rw,cl) = sign*(temp);
-					}
-				      else
-					{
-					  double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-					  l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
-					  double temp;
-					  temp = l_checkdels[fl][q](rw,cl)*0.5;
-					  temp = max(abs(temp),0.000001);
-					  l_checkdels[fl][q](rw,cl) = sign*(temp);
-					}
-				    }
-				  else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) == 0))
-				    {
-				      if (rprop == 1)
-					{
-					  l_tdels[fl][q+1](rw,cl) = 0.1*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
-					}
-				      else
-					{
-					  l_tdels[fl][q+1](rw,cl) = abs(l_checkdels[fl][q](rw,cl))*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
-					}
-				    }
-				}
-			    }
-			}
-		    }
-		}
+	      l_update(rprop,rmax);
 	      for(int q = 0; q < numfiles; q++)
 		{
 		  int lnumhid = l_numhids[q];
@@ -4981,7 +4847,6 @@ void NNet::l_testall(int mode)
 
 
 
-//TODO MODIFY WHEN NNET IS UPDATED
 //Calculates the second order gradients
 void NNet::ld_backprop(mat x, mat y, int gpos)
 {
@@ -5577,151 +5442,7 @@ void NNet::ld_trainrprop(int numlatent, double tmax, int mode, double tol)
 		      lat_rprop++;
 		    }
 		}
-	      if (rprop == 0)
-		{
-		  for (int fl = 0; fl < numfiles; fl++)
-		    {
-		      int l_numhid = l_numhids[fl];
-		      for(int q = 0; q < l_numhid + 1; q++)
-			{
-			  l_checkgrads[fl].push_back(l_tgrads[fl][q]);
-			  l_checkdels[fl].push_back(l_tdels[fl][q+1]);
-			}
-		    }
-		}
-	      else
-		{
-		  for (int fl = 0; fl < numfiles; fl++)
-		    {
-		      int l_numhid = l_numhids[fl];
-		      for(int q = 0; q < l_numhid + 1; q++)
-			{
-			  int rows = l_checkgrads[fl][q].n_rows;
-			  int cols = l_checkgrads[fl][q].n_cols;
-			  for(int rw = 0; rw < rows; rw++)
-			    {
-			      for(int cl = 0; cl < cols; cl++)
-				{
-				  if (l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) > 0) 
-				    {
-				      //push up weight
-				      if (rprop == 1)
-					{
-					  double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-					  l_tgrads[fl][q](rw,cl) = 0.1*1.2;
-					  l_tgrads[fl][q](rw,cl) = min(l_tgrads[fl][q](rw,cl),rmax);
-					  l_checkgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-					  l_tgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-					}
-				      else
-					{
-					  double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-					  l_tgrads[fl][q](rw,cl) = sign*l_checkgrads[fl][q](rw,cl)*1.2;
-					  l_tgrads[fl][q](rw,cl) = min(l_tgrads[fl][q](rw,cl),rmax);
-					  l_checkgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-					  l_tgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-					}
-				    }
-				  else if ((l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) < 0))
-				    {
-				      //pushdown weight
-				      if (rprop == 1)
-					{
-					  double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-					  l_tgrads[fl][q](rw,cl) = sign*abs(l_checkgrads[fl][q](rw,cl))*0.5;
-					  double temp;
-					  temp = 0.1*0.5;
-					  temp = max(temp,0.000001);
-					  l_checkgrads[fl][q](rw,cl) = sign*(temp);
-					}				    
-				      else
-					{
-					  double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-					  l_tgrads[fl][q](rw,cl) = sign*abs(l_checkgrads[fl][q](rw,cl))*0.5;
-					  double temp;
-					  temp = l_checkgrads[fl][q](rw,cl)*0.5;
-					  temp = max(abs(temp),0.000001);
-					  l_checkgrads[fl][q](rw,cl) = sign*(temp);
-					}
-				    }
-				  else if ((l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) == 0))
-				    {
-				      if (rprop == 1)
-					{
-					  l_tgrads[fl][q](rw,cl) = 0.1*1.0*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
-					}
-				      else
-					{
-					  l_tgrads[fl][q](rw,cl) = abs(l_checkgrads[fl][q](rw,cl))*1.0*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
-					}
-				    }
-				}
-			    }
-			  //BIAS
-			  int brows = l_checkdels[fl][q].n_rows;
-			  int bcols = l_checkdels[fl][q].n_cols;
-			  for(int rw = 0; rw < brows; rw++)
-			    {
-			      for(int cl = 0; cl < bcols; cl++)
-				{
-				  if (l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) > 0)
-				    {
-				      //push up bias
-				      if (rprop == 1)
-					{
-					  double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-					  l_tdels[fl][q+1](rw,cl) = 0.1*1.2;
-					  l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
-					  l_checkdels[fl][q](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-					  l_tdels[fl][q+1](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-					}
-				      else
-					{
-					  double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-					  l_tdels[fl][q+1](rw,cl) = sign*l_checkdels[fl][q](rw,cl)*1.2;
-					  l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
-					  l_checkdels[fl][q](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-					  l_tdels[fl][q+1](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-					}
-				    }
-				  else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) < 0))
-				    {
-				      //pushdown bias
-				      if (rprop == 1)
-					{
-					  double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-					  l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
-					  double temp;
-					  temp = 0.1*0.5;
-					  temp = max(abs(temp),0.000001);
-					  l_checkdels[fl][q](rw,cl) = sign*(temp);
-					}
-				      else
-					{
-					  double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-					  l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
-					  double temp;
-					  temp = l_checkdels[fl][q](rw,cl)*0.5;
-					  temp = max(abs(temp),0.000001);
-					  l_checkdels[fl][q](rw,cl) = sign*(temp);
-					}
-				    }
-				  else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) == 0))
-				    {
-				      if (rprop == 1)
-					{
-					  l_tdels[fl][q+1](rw,cl) = 0.1*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
-					}
-				      else
-					{
-					  l_tdels[fl][q+1](rw,cl) = abs(l_checkdels[fl][q](rw,cl))*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
-					}
-				    }
-				}
-			    }
-			}
-		    }
-		}
+	      l_update(rprop,rmax);
 	      for(int t = 0; t < numfiles; t++)
 		{
 		  int lnumhid = l_numhids[t];
@@ -6006,150 +5727,7 @@ void NNet::ld_trainrprop(int numlatent, double tmax, int mode, double tol)
 			  lat_rprop++;
 			}
 		    }
-		  if (rprop == 0)
-		    {
-		      for (int fl = 0; fl < numfiles; fl++)
-			{
-			  int l_numhid = l_numhids[fl];
-			  for(int q = 0; q < l_numhid + 1; q++)
-			    {
-			      l_checkgrads[fl].push_back(l_tgrads[fl][q]);
-			      l_checkdels[fl].push_back(l_tdels[fl][q+1]);
-			    }
-			}
-		    }
-		  else
-		    {
-		      for (int fl = 0; fl < numfiles; fl++)
-			{
-			  int l_numhid = l_numhids[fl];
-			  for(int q = 0; q < l_numhid + 1; q++)
-			    {
-			      int rows = l_checkgrads[fl][q].n_rows;
-			      int cols = l_checkgrads[fl][q].n_cols;
-			      for(int rw = 0; rw < rows; rw++)
-				{
-				  for(int cl = 0; cl < cols; cl++)
-				    {
-				      if (l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) > 0) 
-					{
-					  //push up weight
-					  if (rprop == 1)
-					    {
-					      double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-					      l_tgrads[fl][q](rw,cl) = 0.1*1.2;
-					      l_tgrads[fl][q](rw,cl) = min(l_tgrads[fl][q](rw,cl),rmax);
-					      l_checkgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-					      l_tgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-					    }
-					  else
-					    {
-					      double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-					      l_tgrads[fl][q](rw,cl) = sign*l_checkgrads[fl][q](rw,cl)*1.2;
-					      l_tgrads[fl][q](rw,cl) = min(l_tgrads[fl][q](rw,cl),rmax);
-					      l_checkgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-					      l_tgrads[fl][q](rw,cl) = sign*l_tgrads[fl][q](rw,cl);
-					    }
-					}
-				      else if ((l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) < 0))
-					{
-					  //pushdown weight
-					  if (rprop == 1)
-					    {
-					      double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-					      l_tgrads[fl][q](rw,cl) = sign*abs(l_checkgrads[fl][q](rw,cl))*0.5;
-					      double temp;
-					      temp = 0.1*0.5;
-					      temp = max(temp,0.000001);
-					      l_checkgrads[fl][q](rw,cl) = sign*(temp);
-					    }
-					  else
-					    {
-					      double sign = copysign(1,l_tgrads[fl][q](rw,cl));
-					      l_tgrads[fl][q](rw,cl) = sign*abs(l_checkgrads[fl][q](rw,cl))*0.5;
-					      double temp;
-					      temp = l_checkgrads[fl][q](rw,cl)*0.5;
-					      temp = max(abs(temp),0.000001);
-					      l_checkgrads[fl][q](rw,cl) = sign*(temp);
-					    }
-					}
-				      else if ((l_checkgrads[fl][q](rw,cl)*l_tgrads[fl][q](rw,cl) == 0))
-					{
-					  if (rprop == 1)
-					    {
-					      l_tgrads[fl][q](rw,cl) = 0.1*1.0*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
-					    }
-					  else
-					    {
-					      l_tgrads[fl][q](rw,cl) = abs(l_checkgrads[fl][q](rw,cl))*1.0*(l_tgrads[fl][q](rw,cl)/abs(l_tgrads[fl][q](rw,cl)));
-					    }
-					}
-				    }
-				}
-			      //BIAS
-			      int brows = l_checkdels[fl][q].n_rows;
-			      int bcols = l_checkdels[fl][q].n_cols;
-			      for(int rw = 0; rw < brows; rw++)
-				{
-				  for(int cl = 0; cl < bcols; cl++)
-				    {
-				      if (l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) > 0)
-					{
-					  if (rprop == 1)
-					    {
-					      double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-					      l_tdels[fl][q+1](rw,cl) = 0.1*1.2;
-					      l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
-					      l_checkdels[fl][q](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-					      l_tdels[fl][q+1](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-					    }
-					  else
-					    {
-					      double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-					      l_tdels[fl][q+1](rw,cl) = sign*l_checkdels[fl][q](rw,cl)*1.2;
-					      l_tdels[fl][q+1](rw,cl) = min(l_tdels[fl][q+1](rw,cl),rmax);
-					      l_checkdels[fl][q](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-					      l_tdels[fl][q+1](rw,cl) = sign*l_tdels[fl][q+1](rw,cl);
-					    }
-					}
-				      else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) < 0))
-					{
-					  //pushdown bias
-					  if (rprop == 1)
-					    {
-					      double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-					      l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
-					      double temp;
-					      temp = 0.1*0.5;
-					      temp = max(abs(temp),0.000001);
-					      l_checkdels[fl][q](rw,cl) = sign*(temp);
-					    }
-					  else
-					    {
-					      double sign = copysign(1,l_tdels[fl][q+1](rw,cl));
-					      l_tdels[fl][q+1](rw,cl) = sign*abs(l_checkdels[fl][q](rw,cl))*0.5;
-					      double temp;
-					      temp = l_checkdels[fl][q](rw,cl)*0.5;
-					      temp = max(abs(temp),0.000001);
-					      l_checkdels[fl][q](rw,cl) = sign*(temp);
-					    }
-					}
-				      else if ((l_checkdels[fl][q](rw,cl)*l_tdels[fl][q+1](rw,cl) == 0))
-					{
-					  if (rprop == 1)
-					    {
-					      l_tdels[fl][q+1](rw,cl) = 0.1*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
-					    }
-					  else
-					    {
-					      l_tdels[fl][q+1](rw,cl) = abs(l_checkdels[fl][q](rw,cl))*1.0*(l_tdels[fl][q+1](rw,cl)/abs(l_tdels[fl][q+1](rw,cl)));
-					    }
-					}
-				    }
-				}
-			    }
-			}
-		    }
+		  l_update(rprop,rmax);
 		  for(int q = 0; q < numfiles; q++)
 		    {
 		      int lnumhid = l_numhids[q];
