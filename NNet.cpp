@@ -1022,6 +1022,68 @@ void NNet::update(int r_prop, double r_max)
 }
 
 
+
+void NNet::rms_prop(int r_prop)
+{
+  int rprop = r_prop;
+  if (rprop == 0)
+    {
+      for(int q = 0; q < numhid + 1; q++)
+	{
+	  checkgrads.push_back(tgrads[q]);
+	  checkdels.push_back(tdels[q]);
+	  int rows = checkgrads[q].n_rows;
+	  int cols = checkdels[q].n_cols;
+	  for(int rw = 0; rw < rows; rw++)
+	    {
+	      for(int cl = 0; cl < cols; cl++)
+		{
+		  checkgrads[q](rw,cl) = abs(checkgrads[q](rw,cl));
+		}
+	    }
+	  int brows = checkdels[q].n_rows;
+	  int bcols = checkdels[q].n_cols;
+	  for(int rw = 0; rw < brows; rw++)
+	    {
+	      for(int cl = 0; cl < bcols; cl++)
+		{
+		  checkdels[q](rw,cl) = abs(checkdels[q](rw,cl));
+		}
+	    }
+	}
+    }
+  else
+    {
+      for(int q = 0; q < numhid + 1; q++)
+	{
+	  checkgrads[q] = 0.9*(checkgrads[q]%checkgrads[q]) + 0.1*(tgrads[q]%tgrads[q]);
+	  checkdels[q] = 0.9*(checkdels[q]%checkdels[q]) + 0.1*(tdels[q]%tdels[q]);
+	  int rows = checkgrads[q].n_rows;
+	  int cols = checkgrads[q].n_cols;
+	  for(int rw = 0; rw < rows; rw++)
+	    {
+	      for(int cl = 0; cl < cols; cl++)
+		    {
+		      checkgrads[q](rw,cl) = sqrt(checkgrads[q](rw,cl)) + 0.0000001;
+		    }
+		}
+	  int brows = checkdels[q].n_rows;
+	  int bcols = checkdels[q].n_cols;
+	  for(int rw = 0; rw < brows; rw++)
+	    {
+	      for(int cl = 0; cl < bcols; cl++)
+		{
+		  checkdels[q](rw,cl) = sqrt(checkdels[q](rw,cl)) + 0.0000001;
+		}
+	    }
+	}
+    }
+  return;
+}
+
+
+
+
 //Trains the network accroding to RPROP
 void NNet::train_rprop(int mode,int verbose,double tmax)
 {
@@ -1203,7 +1265,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 			}
 		    }
 		}
-	      update(rprop,rmax);
+	      rms_prop(rprop);
 	      for (int j = 0; j < numhid + 1; j++)
 		{
 		  if (rprop == 0)
@@ -1216,8 +1278,8 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		    }
 		  else
 		    {
-		      params[j] = params[j] - tgrads[j];
-		      bias[j] = bias[j] - tdels[j];
+		      params[j] = params[j] - 0.001*(tgrads[j]/checkgrads[j]);
+		      bias[j] = bias[j] - 0.001*(tdels[j]/checkdels[j]);
 		      tgrads[j].fill(0);
 		      tdels[j].fill(0);
 		    }
@@ -3963,6 +4025,76 @@ void NNet::l_update(int r_prop, double r_max)
 
 
 
+//RMSPROP for SGD 
+void NNet::l_rmsprop(int r_prop)
+{
+  int rprop = r_prop;
+  if (rprop == 0)
+    {
+      for (int fl = 0; fl < numfiles; fl++)
+	{
+	  int l_numhid = l_numhids[fl];
+	  for(int q = 0; q < l_numhid + 1; q++)
+	    {
+	      l_checkgrads[fl].push_back(l_tgrads[fl][q]);
+	      l_checkdels[fl].push_back(l_tdels[fl][q+1]);
+	      int rows = l_checkgrads[fl][q].n_rows;
+	      int cols = l_checkgrads[fl][q].n_cols;
+	      for(int rw = 0; rw < rows; rw++)
+		{
+		  for(int cl = 0; cl < cols; cl++)
+		    {
+		      l_checkgrads[fl][q](rw,cl) = abs(l_checkgrads[fl][q](rw,cl));
+		    }
+		}
+	      int brows = l_checkdels[fl][q].n_rows;
+	      int bcols = l_checkdels[fl][q].n_cols;
+	      for(int rw = 0; rw < brows; rw++)
+		{
+		  for(int cl = 0; cl < bcols; cl++)
+		    {
+		      l_checkdels[fl][q](rw,cl) = abs(l_checkdels[fl][q](rw,cl));
+		    }
+		}
+	    }
+	}
+    }
+  else
+    {
+      for (int fl = 0; fl < numfiles; fl++)
+	{
+	  int l_numhid = l_numhids[fl];
+	  for(int q = 0; q < l_numhid + 1; q++)
+	    {
+	      l_checkgrads[fl][q] = 0.9*(l_checkgrads[fl][q]%l_checkgrads[fl][q]) + 0.1*(l_tgrads[fl][q]%l_tgrads[fl][q]);
+	      l_checkdels[fl][q] = 0.9*(l_checkdels[fl][q]%l_checkdels[fl][q]) + 0.1*(l_tdels[fl][q+1]%l_tdels[fl][q+1]);
+	      int rows = l_checkgrads[fl][q].n_rows;
+	      int cols = l_checkgrads[fl][q].n_cols;
+	      for(int rw = 0; rw < rows; rw++)
+		{
+		  for(int cl = 0; cl < cols; cl++)
+		    {
+		      l_checkgrads[fl][q](rw,cl) = sqrt(l_checkgrads[fl][q](rw,cl)) + 0.0000001;
+		    }
+		}
+	      int brows = l_checkdels[fl][q].n_rows;
+	      int bcols = l_checkdels[fl][q].n_cols;
+	      for(int rw = 0; rw < brows; rw++)
+		{
+		  for(int cl = 0; cl < bcols; cl++)
+		    {
+		      l_checkdels[fl][q](rw,cl) = sqrt(l_checkdels[fl][q](rw,cl)) + 0.0000001;
+		    }
+		}
+	    }
+	}
+    }
+  return;
+}
+
+
+
+
 //RPROP for latent parameter learning
 void NNet::l_trainrprop(int numlatent, double tmax, int mode, double tol)
 {
@@ -4349,7 +4481,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode, double tol)
 	  while (step < l_train)
 	    {
 	      int k = step;
-	      step = min(step + 20,l_train);
+	      step = min(step + 10,l_train);
 	      for(;k < step; k++)
 		{
 		  if (!l_bpthreads.empty())
@@ -4508,24 +4640,23 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode, double tol)
 		      lat_rprop++;
 		    }
 		}
-	      l_update(rprop,rmax);
+	      l_rmsprop(rprop);
 	      for(int q = 0; q < numfiles; q++)
 		{
 		  int lnumhid = l_numhids[q];
 		  for (int j = 0; j < lnumhid + 1; j++)
 		    {
-		      //the below only applies if regression is going.....
 		      if (rprop == 0)
 			{
-			  l_params[q][j] = l_params[q][j] - (0.00001/(double)l_train)*l_tgrads[q][j] - 0.0001*l_params[q][j];
-			  l_bias[q][j] = l_bias[q][j] - (0.00001/(double)l_train)*l_tdels[q][j+1];
+			  l_params[q][j] = l_params[q][j] - (0.0000001)*l_tgrads[q][j] - 0.0001*l_params[q][j];
+			  l_bias[q][j] = l_bias[q][j] - (0.0000001)*l_tdels[q][j+1];
 			  l_tgrads[q][j].fill(0.0);
 			  l_tdels[q][j+1].fill(0.0);
 			}
 		      else
 			{
-			  l_params[q][j] = l_params[q][j] - l_tgrads[q][j];
-			  l_bias[q][j] = l_bias[q][j] - l_tdels[q][j+1];
+			  l_params[q][j] = l_params[q][j] - 0.001*(l_tgrads[q][j]/l_checkgrads[q][j]);
+			  l_bias[q][j] = l_bias[q][j] - 0.001*(l_tdels[q][j+1]/l_checkdels[q][j]);
 			  l_tgrads[q][j].fill(0.0);
 			  l_tdels[q][j+1].fill(0.0);
 			}
@@ -5598,7 +5729,7 @@ void NNet::ld_trainrprop(int numlatent, double tmax, int mode, double tol)
 			  lat_rprop++;
 			}
 		    }
-		  l_update(rprop,rmax);
+		  l_rmsprop(rprop);
 		  for(int q = 0; q < numfiles; q++)
 		    {
 		      int lnumhid = l_numhids[q];
@@ -5615,9 +5746,9 @@ void NNet::ld_trainrprop(int numlatent, double tmax, int mode, double tol)
 			    }
 			  else
 			    {
-			      l_params[q][j] = l_params[q][j] - l_tgrads[q][j];
+			      l_params[q][j] = l_params[q][j] - 0.001*(l_tgrads[q][j]/l_checkgrads[q][j]);
 			      l_params[q][j] = l_params[q][j]%l_saliencies[q][j];
-			      l_bias[q][j] = l_bias[q][j] - l_tdels[q][j+1];
+			      l_bias[q][j] = l_bias[q][j] - 0.001*(l_tdels[q][j+1]/l_checkdels[q][j]);
 			      l_tgrads[q][j].fill(0.0);
 			      l_tdels[q][j+1].fill(0.0);
 			    }

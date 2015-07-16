@@ -76,6 +76,8 @@ class NNet
   void ls_optimalBD(void);
   void l_update(int r_prop, double r_max);
   void update(int r_prop, double r_max);
+  void l_rmsprop(int r_prop);
+  void rms_prop(int r_prop);
   vector<mat> params;
   vector<mat> bias;
   vector<mat> velocity;
@@ -214,8 +216,4 @@ BOOST_PYTHON_MODULE(NNet)
     .def("ld_trainrprop",&NNet::ld_trainrprop,NNet_overloads13())
     ;
 }
-
-
-
-
 
