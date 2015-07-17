@@ -15,6 +15,13 @@ void NNet::parallel_bp(int index, int pos)
   backprop(xdata[index],ydata[index],pos);
 } 
 
+
+void NNet::d_parallelbp(int index, int pos)
+{
+  d_backprop(xdata[index],ydata[index],pos);
+}
+
+
 void NNet::l_parallelbp(int index, int pos)
 {
   l_backprop(l_xvals[index],l_yvals[pos][index], pos);
@@ -314,8 +321,7 @@ void NNet::load(string filename,int imode, string sep1, string sep2)
   if (loadmode == 0)
     {
       tests = numlines/5;
-      validate = tests;
-      train = numlines - tests - validate;
+      train = numlines - tests;
     }
   else if (loadmode == 1)
     {
@@ -552,6 +558,108 @@ void NNet::backprop(mat x, mat y, int gpos)
 }
 
 
+void NNet::d_backprop(mat x, mat y, int gpos)
+{
+  int idx;
+  if (gpos == -1)
+    {
+      idx = 0;
+    }
+  else
+    {
+      idx = gpos;
+    }
+  feed_forward(x,idx);
+  if(!d_grads[idx].empty())
+    { 
+      d_grads[idx].clear();
+    }
+  if(!d_dels[idx].empty())
+    {
+      d_dels[idx].clear();
+    }
+  if (costfunc == 0)
+    {
+      if (funclayer[numhid] == 0)
+	{
+	  d_dels[idx].push_back(2.0*((activ[idx][numhid+1] - (activ.at(idx).at(numhid+1)%activ.at(idx).at(numhid+1)))%(activ[idx][numhid+1] - (activ.at(idx).at(numhid+1)%activ.at(idx).at(numhid+1)))));
+	}
+      else if (funclayer[numhid] == 1)
+	{
+	  d_dels[idx].push_back(2.0*((ones<mat>(numlayers[numhid+1],1) - activ[idx][numhid+1]%activ[idx][numhid+1])%(ones<mat>(numlayers[numhid+1],1) - activ[idx][numhid+1]%activ[idx][numhid+1])));
+	}
+      else if (funclayer[numhid] == 2)
+	{
+	  for (int i = 0; i < numlayers[numhid+1]; i++)
+	    {
+	      sums[idx][numhid + 1](i,0) = rec_D(sums[idx][numhid + 1](i,0));
+	    }
+	  d_dels[idx].push_back(2.0*(sums[idx][numhid+1]%sums[idx][numhid+1]));
+	}
+      else if (funclayer[numhid] == 3)
+	{
+	  for (int i = 0; i < numlayers[numhid+1]; i++)
+	    {
+	      sums[idx][numhid + 1](i,0) = tanh_d(sums[idx][numhid + 1](i,0));
+	    }
+	  d_dels[idx].push_back(2.0*(sums[idx][numhid+1]%sums[idx][numhid+1]));
+	}
+    }
+  else
+    {
+      //TODO: have to complete results for other cost functions
+      return;
+    }
+  int count = 1;
+  for (int i = 0; i < numhid; i++)
+    {
+      mat temp;
+      temp = ((params[numhid - i]%params[numhid - i]).t())*(d_dels[idx][i]);
+      mat derv = sums[idx][numhid - i];
+      if (i < numhid)
+	{
+	  if (funclayer[numhid - count] == 0)
+	    { 
+	      derv = activ[idx][numhid- i] - (activ[idx][numhid - i]%activ[idx][numhid - i]);
+	    }
+	  else if (funclayer[numhid-count] == 1)
+	    {
+	      int n = numlayers[numhid - i];
+	      for (int j = 0; j < n; j++)
+		{
+		  derv(j,0) = tanh_dr(derv(j,0));
+		}
+	    }
+	  else if (funclayer[numhid - count] == 2)
+	    {
+	      int n = numlayers[numhid - i];
+	      for (int j = 0; j < n; j++)
+		{
+		  derv(j,0) = rec_D(derv(j,0));
+		}
+	    }
+	  else if (funclayer[numhid-count] == 3)
+	    {
+	      int n = numlayers[numhid - i];
+	      for (int j = 0; j < n; j++)
+		{
+		  derv(j,0) = tanh_d(derv(j,0));
+		}
+	    }
+	}
+      temp = temp%(derv%derv);
+      d_dels[idx].push_back(temp);
+      count++;
+    }
+  for (int i = 0; i < numhid + 1; i++)
+    {
+      d_grads[idx].push_back(d_dels[idx][i]*((activ[idx][numhid - i]%activ[idx][numhid - i]).t()));
+    }
+  return;
+}
+
+
+
 //Train the neural network
 void NNet::train_net(double lrate, int mode, int verbose)
 {
@@ -622,7 +730,7 @@ void NNet::train_net(double lrate, int mode, int verbose)
 		}
 	      else 
 		{
-		  test_net(1,verbose);
+		  test_net(verbose);
 		}
 	      if (min_rmse == -1)
 		{
@@ -810,7 +918,7 @@ void NNet::train_net(double lrate, int mode, int verbose)
 		}
 	      else 
 		{
-		  test_net(1,verbose);
+		  test_net(verbose);
 		}
 	      if (min_rmse == -1)
 		{
@@ -1083,6 +1191,107 @@ void NNet::rms_prop(int r_prop)
 
 
 
+void NNet::optimalBD(void)
+{
+  if (!d_tgrads.empty())
+    {
+      d_tgrads.clear();
+    }
+  for(int j = 0; j < numhid + 1; j++)
+    {
+      int rows = numlayers[j+1];
+      int cols = numlayers[j];
+      d_tgrads.push_back(zeros<mat>(rows,cols));
+    }
+  vector<thread> dbp_threads;
+  int l_count = 0;
+  double factc;
+  for (int i = 0; i < train; i = i + numcores)
+    {
+      if (numcores > 1)
+	{
+	  if (!dbp_threads.empty())
+	    {
+	      dbp_threads.clear();
+	    }
+	  for(int j = 0; j < numcores; j++)
+	    {
+	      dbp_threads.push_back(std::thread(&NNet::d_parallelbp,this,i+j,j));
+	    }
+	  for(int j = 0; j < numcores; j++)
+	    {
+	      dbp_threads[j].join();
+	    }
+	}
+      else
+	{
+	  d_backprop(xdata[i],ydata[i],0);
+	}
+      l_count++;
+      for (int k = 0; k < numcores; k++)
+	{
+	  reverse(d_grads[k].begin(),d_grads[k].end());
+	  for(int j = 0; j < numhid + 1; j++)
+	    {
+	      d_tgrads[j] = d_tgrads[j] + d_grads[k][j];
+	    }
+	}
+    }
+  factc = 1.0/(double)l_count;
+  if (!saliencies.empty())
+    {
+      checksals = saliencies;
+      saliencies.clear();
+    }
+  for(int i = 0; i < numhid + 1; i++)
+    {
+      saliencies.push_back(factc*0.5*((params[i]%params[i])%d_tgrads[i]));
+    }
+  double min_s = 1000.0 + saliencies[0](0,0);
+  for(int i = 0; i < numhid + 1; i++)
+    {
+      int rows = saliencies[i].n_rows;
+      int cols = saliencies[i].n_cols;
+      for(int rw = 0; rw < rows; rw++)
+	{
+	  for(int cl = 0; cl < cols; cl++)
+	    {
+	      if (saliencies[i](rw,cl) < min_s)
+		{
+		  min_s = saliencies[i](rw,cl);
+		}
+	      else
+		{
+		  continue;
+		}
+	    }
+	}
+    }
+  for(int i = 0; i < numhid + 1; i++)
+    {
+      int rows = saliencies[i].n_rows;
+      int cols = saliencies[i].n_cols;
+      double s_tol = min_s/10.0;
+      for(int rw = 0; rw < rows; rw++)
+	{
+	  for(int cl = 0; cl < cols; cl++)
+	    {
+	      if (abs(saliencies[i](rw,cl) - min_s) < s_tol)
+		{
+		  saliencies[i](rw,cl) = 0.0;
+		}
+	      else
+		{
+		  saliencies[i](rw,cl) = 1.0*checksals[i](rw,cl);
+		}
+	    }
+	}
+    }
+  return;
+}
+
+
+
 
 //Trains the network accroding to RPROP
 void NNet::train_rprop(int mode,int verbose,double tmax)
@@ -1123,15 +1332,26 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 	    {
 	      cout<<((double)k/(double)epoch)*100<<"%"<<endl;
 	    }
-	  for (int i = 0; i < train; i++)
+	  for (int i = 0; i < train; i = i + numcores)
 	    {
-	      for (int t = 0; t < numcores; t++)
+	      if (numcores > 1)
 		{
-		  bpthreads.push_back(std::thread(&NNet::parallel_bp,this,i,t));
+		  if (!bpthreads.empty())
+		    {
+		      bpthreads.clear();
+		    }
+		  for (int t = 0; t < numcores; t++)
+		    {
+		      bpthreads.push_back(std::thread(&NNet::parallel_bp,this,i + t,t));
+		    }
+		  for (int t = 0; t < numcores; t++)
+		    {
+		      bpthreads[t].join();
+		    }
 		}
-	      for (int t = 0; t < numcores; t++)
+	      else
 		{
-		  bpthreads[t].join();
+		  backprop(xdata[i],ydata[i],0);
 		}
 	      for (int q = 0; q < numcores; q++)
 		{
@@ -1178,7 +1398,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		}
 	      else 
 		{
-		  test_net(1,verbose);
+		  test_net(verbose);
 		}
 	      if (min_rmse == -1)
 		{
@@ -1241,7 +1461,8 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		  for (int t = 0; t < ncore; t++)
 		    {
 		      if (numcores > 1)
-			{ bpthreads.push_back(std::thread(&NNet::parallel_bp,this,idxs.at(k+t),t));
+			{ 
+			  bpthreads.push_back(std::thread(&NNet::parallel_bp,this,idxs.at(k+t),t));
 			}
 		      else
 			{
@@ -1302,7 +1523,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		}
 	      else 
 		{
-		  test_net(1,verbose);
+		  test_net(verbose);
 		}
 	      if (min_rmse == -1)
 		{
@@ -1336,33 +1557,321 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 }
 
 
-//Test the network
-void NNet::test_net(int testmode, int verbose)
+
+//Trains the network accroding to RPROP
+void NNet::d_trainrprop(int mode, int verbose,double tmax)
 {
-   if (loadmode != 0)
+  if (ydata.empty())
+    {
+      cout<<"Please load files into the network!"<<endl;
+      abort();
+    }
+  if (!checkgrads.empty())
+    {
+      checkgrads.clear();
+      checkdels.clear();
+    }
+  int trainmode = mode;
+  vector<thread> bpthreads;
+  double rmax = tmax;
+  vector<mat> tr;
+  for (int i = 0; i < numcores; i++)
+    {
+      d_grads.push_back(tr);
+      d_dels.push_back(tr);
+    }
+  if ((trainmode != 0) && (trainmode != 1))
+    {
+      cout<<"Training mode can only be 0 or 1"<<endl;
+      return;
+    }
+  for(int i = 0; i < numhid + 1; i++)
+    {
+      tgrads[i].fill(0);
+      tdels[i].fill(0);
+    }
+  int rprop = 0;
+  if (gradd == 0)
+    {
+      for(int obd = 0; obd < 3; obd++)
+	{
+	  if (obd == 0)
+	    {
+	      for(int j = 0; j < numhid + 1; j++)
+		{
+		  int rows = numlayers[j+1];
+		  int cols = numlayers[j];
+		  saliencies.push_back(ones<mat>(rows,cols));
+		}
+	    }
+	  for (int k = 0; k < epoch; k++)
+	    {
+	      if (verbose == 0)
+		{
+		  cout<<"\r"<<((double)k/(double)epoch)*100<<"%"<<flush; 
+		}
+	      else
+		{
+		  cout<<((double)k/(double)epoch)*100<<"%"<<endl;
+		}
+	      for (int i = 0; i < train; i = i + numcores)
+		{
+		  if (numcores > 1)
+		    {
+		      if (!bpthreads.empty())
+			{
+			  bpthreads.clear();
+			}
+		      for (int t = 0; t < numcores; t++)
+			{
+			  bpthreads.push_back(std::thread(&NNet::parallel_bp,this,i + t,t));
+			}
+		      for (int t = 0; t < numcores; t++)
+			{
+			  bpthreads[t].join();
+			}
+		    }
+		  else
+		    {
+		      backprop(xdata[i],ydata[i],0);
+		    }
+		  for (int q = 0; q < numcores; q++)
+		    {
+		      for (int j = 0; j < numhid + 1; j++)
+			{
+			  tgrads[j] = tgrads[j] + grads[q][numhid-j];
+			  tdels[j] = tdels[j] + dels[q][numhid - j];
+			}
+		    }
+		}
+	      update(rprop,rmax);
+	      for (int l = 0; l < numhid + 1; l++)
+		{
+		  if (rprop == 0)
+		    {
+		      params[l] = params[l] - (0.000001)*tgrads[l]; - 0.00001*params[l];
+		      bias[l] = bias[l] - (0.0001/(double)train)*tdels[l];
+		      params[l] = params[l]%saliencies[l];
+		      rprop++;
+		      tgrads[l].fill(0);
+		      tdels[l].fill(0);
+		    }
+		  else
+		    {
+		      params[l] = params[l] - tgrads[l];
+		      bias[l] = bias[l] - tdels[l];
+		      params[l] = params[l]%saliencies[l];
+		      tgrads[l].fill(0);
+		      tdels[l].fill(0);
+		    }
+		}
+	      if (rprop >= 1)
+		{
+		  rprop = 3;
+		}
+	      else
+		{
+		  rprop++;
+		}
+	      //Below takes extra measures so that the network converges
+	      if (trainmode == 1)
+		{
+		  if (loadmode == 1)
+		    {
+		      testfile(loadfile,verbose);
+		    }
+		  else 
+		    {
+		      test_net(verbose);
+		    }
+		  if (min_rmse == -1)
+		    {
+		      min_rmse = temp_rmse;
+		    }
+		  if (temp_rmse < min_rmse)
+		    {
+		      min_rmse = temp_rmse;
+		      if (!best_params.empty())
+			{
+			  best_params.clear();
+			}
+		      if(!best_bias.empty())
+			{
+			  best_bias.clear();
+			}
+		      for (int r = 0; r < numhid + 1; r++)
+			{
+			  best_params.push_back(params.at(r));
+			  best_bias.push_back(bias.at(r));
+			  best_velocity.push_back(velocity.at(r));
+			}
+		    }
+		  cout<<endl;
+		}
+	    }
+	  optimalBD();
+	}
+    }
+  else if (gradd == 1)
+    {
+      cout<<"Initializing Stochastic Gradient Descent\n";
+      vector<int> idxs;
+      for (int i = 0; i < train; i++)
+	{
+	  idxs.push_back(i);
+	}
+      random_shuffle(idxs.begin(),idxs.end());
+      for(int obd = 0; obd < 3; obd++)
+	{
+	  if (obd == 0)
+	    {
+	      for(int j = 0; j < numhid + 1; j++)
+		{
+		  int rows = numlayers[j+1];
+		  int cols = numlayers[j];
+		  saliencies.push_back(ones<mat>(rows,cols));
+		}
+	    }
+	  for (int i = 0; i < epoch; i++)
+	    {
+	      if (verbose == 0)
+		{
+		  cout<<"\r"<<((double)i/(double)epoch)*100<<"%"<<flush; 
+		}
+	      else
+		{
+		  cout<<((double)i/(double)epoch)*100<<"%"<<endl;
+		}
+	      int step = 0;
+	      while (step < train)
+		{
+		  int k = step;
+		  step = min(step + 10,train);
+		  int ncore = min(numcores,10);
+		  for(;k < step; k = k + ncore)
+		    {
+		      if (!bpthreads.empty())
+			{
+			  bpthreads.clear();
+			}
+		      for (int t = 0; t < ncore; t++)
+			{
+			  if (numcores > 1)
+			    { 
+			      bpthreads.push_back(std::thread(&NNet::parallel_bp,this,idxs.at(k+t),t));
+			    }
+			  else
+			    {
+			      //Threads create an overhead which is avoided if there is only one core available
+			      backprop(xdata.at(idxs.at(k+t)),ydata.at(idxs.at(k+t)),-1);
+			    }
+			}
+		      if (numcores > 1)
+			{
+			  for(int t = 0; t < ncore; t++)
+			    {
+			      bpthreads[t].join();
+			    }
+			}
+		      for (int q = 0; q < ncore; q++)
+			{
+			  for(int j = 0; j < numhid + 1; j++)
+			    {
+			      tgrads.at(j) = tgrads.at(j) + grads[q].at(numhid - j);
+			      tdels.at(j) = tdels.at(j) + dels[q].at(numhid -j);
+			    }
+			}
+		    }
+		  rms_prop(rprop);
+		  for (int j = 0; j < numhid + 1; j++)
+		    {
+		      if (rprop == 0)
+			{
+			  params[j] = params[j] - (0.000001)*tgrads[j]; - 0.00001*params[j];
+			  bias[j] = bias[j] - (0.00001/(double)train)*tdels[j];
+			  params[j] = params[j]%saliencies[j];
+			  rprop++;
+			  tgrads[j].fill(0);
+			  tdels[j].fill(0);
+			}
+		      else
+			{
+			  params[j] = params[j] - 0.001*(tgrads[j]/checkgrads[j]);
+			  bias[j] = bias[j] - 0.001*(tdels[j]/checkdels[j]);
+			  params[j] = params[j]%saliencies[j];
+			  tgrads[j].fill(0);
+			  tdels[j].fill(0);
+			}
+		    }
+		  if(rprop >= 1)
+		    {
+		      rprop = 3;
+		    }
+		  else
+		    {
+		      rprop++;
+		    }
+		}
+	      //Below takes extra measures so that the network converges
+	      if (trainmode == 1)
+		{
+		  if (loadmode == 1)
+		    {
+		      testfile(loadfile,verbose);
+		    }
+		  else 
+		    {
+		      test_net(verbose);
+		    }
+		  if (min_rmse == -1)
+		    {
+		      min_rmse = temp_rmse;
+		    }
+		  if (temp_rmse < min_rmse)
+		    {
+		      min_rmse = temp_rmse;
+		      if (!best_params.empty())
+			{
+			  best_params.clear();
+			}
+		      if(!best_bias.empty())
+			{
+			  best_bias.clear();
+			}
+		      for (int r = 0; r < numhid + 1; r++)
+			{
+			  best_params.push_back(params.at(r));
+			  best_bias.push_back(bias.at(r));
+			  best_velocity.push_back(velocity.at(r));
+			}
+		    }
+		  cout<<endl;
+		}
+	    }
+	  optimalBD();
+	}
+    }
+  cout<<endl;
+  return;
+}
+
+
+
+
+//Test the network
+void NNet::test_net(int verbose)
+{
+  if (loadmode != 0)
     {
       cout<<"Please use test_file(filename) to test this net!\n";
       return;
     }
-   int start;
-   int stop;
-   if (testmode == 0)
-     {
-       start = train + validate;
-       stop = numdata;
-     }
-   else if (testmode == 1)
-     {
-       start = validate;
-       stop = train+validate;
-     }
-   else
-     {
-       cout<<"Testmode can only be 0 or 1!"<<endl;
-       return;
-     }
+  int start;
+  int stop;
+  start = train;
+  stop = numdata;
   int passed = 0;
-  int error = 0;
+  double error = 0;
   for (int i = start; i < stop; i++)
     {
       feed_forward(xdata[i],-1);
@@ -1425,16 +1934,14 @@ void NNet::test_net(int testmode, int verbose)
     }
   double hitrate = ((double)passed/(double)(stop-start))*100;
   double RMSE = sqrt((error/(double)(stop-start)));
-  if (verbose == 1)
-    {
-      cout<<"The accuracy is: "<<hitrate<<"%\n";
-    }
+  double averror = (sqrt(error)/((double)(stop-start)));
   if(classreg == 1)
     {
       temp_rmse = RMSE;
       if (verbose == 1)
 	{
 	  cout<<"RMSE: "<<RMSE<<endl;
+	  cout<<"Average error: "<<averror<<endl;
 	}
     }
   else
@@ -1443,6 +1950,7 @@ void NNet::test_net(int testmode, int verbose)
       if (verbose == 1)
 	{
 	  cout<<"Passed: "<<passed<<endl;
+	  cout<<"The accuracy is: "<<hitrate<<"%\n";
 	}
     }
   return;
@@ -1791,7 +2299,7 @@ void NNet::test_file(string filename, int verbose,string netname, string sep1, s
       numlines++;
     }
   int passed = 0;
-  int error = 0;
+  double error = 0;
   for (int i = 0; i < numlines; i++)
     {
       feed_forward(testxdata.at(i),feedforwardmode);
@@ -1942,7 +2450,7 @@ void NNet::testfile(string filename,int verbose,int ffmode, string sep1, string 
       numlines++;
     }
   int passed = 0;
-  int error = 0;
+  double error = 0;
   for (int i = 0; i < numlines; i++)
     {
       feed_forward(testxdata[i],feedforwardmode);
@@ -2004,7 +2512,7 @@ void NNet::testfile(string filename,int verbose,int ffmode, string sep1, string 
 	}
     }
   double hitrate = ((double)passed/(double)numlines)*100;
-  if (verbose == 1)
+  if ((verbose == 1) && (classreg == 0))
     {
       cout<<passed<<endl;
       cout<<"The accuracy is: "<<hitrate<<"%\n";
