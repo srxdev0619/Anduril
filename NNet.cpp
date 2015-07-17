@@ -4431,6 +4431,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode, double tol)
 	      if (trainmode == 0)
 		{
 		  cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		  cout<<endl;
 		  l_testall(1);
 		  if (l_error <= tol)
 		    {
@@ -4442,6 +4443,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode, double tol)
 	      else if (trainmode == 1)
 		{
 		  cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		  cout<<endl;
 		  l_testall();
 		  if (l_error <= tol)
 		    {
@@ -4690,6 +4692,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode, double tol)
 	      if (trainmode == 0)
 		{
 		  cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		  cout<<endl;
 		  l_testall(1);
 		  if (l_error <= tol)
 		    {
@@ -4701,6 +4704,7 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode, double tol)
 	      else if (trainmode == 1)
 		{
 		  cout<<"\r"<<"Epoch No. "<<c_epoch<<flush;
+		  cout<<endl;
 		  l_testall();
 		  if (l_error <= tol)
 		    {
