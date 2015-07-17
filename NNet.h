@@ -24,7 +24,8 @@ class NNet
   //Train the Nerual Network
   void train_net(double lrate,int mode = 0, int verbose = 0);
   void train_rprop(int mode = 0,int verbose = 0, double tmax = 15.0);
-  void test_net(int testmode = 0, int verbose = 0);
+  void d_trainrprop(int mode = 0,int verbose = 0, double tmax = 15.0);
+  void test_net(int verbose = 0);
   //Save the current weights and biases
   void savenet(string netname);
   //Load saved net
@@ -63,7 +64,9 @@ class NNet
   void feed_forward(mat x, int gpos);
   //Backprop
   void backprop(mat x, mat y, int gpos);
+  void d_backprop(mat x, mat y, int gpos);
   void parallel_bp(int index, int pos);
+  void d_parallelbp(int index, int pos);
   void l_backprop(mat x, mat y, int gpos);
   void l_feedforward(mat x, int gpos);
   void l_parallelbp(int index, int pos);
@@ -74,6 +77,7 @@ class NNet
   void OBD_init(void);
   void l_optimalBD(int pos);
   void ls_optimalBD(void);
+  void optimalBD(void);
   void l_update(int r_prop, double r_max);
   void update(int r_prop, double r_max);
   void l_rmsprop(int r_prop);
@@ -130,7 +134,6 @@ class NNet
   vector<mat> testydata;
   int tests;
   int train;
-  int validate;
   int numdata;
   //number of hidden layers
   int numhid;
@@ -158,10 +161,15 @@ class NNet
   int loadmode;
   vector<mat> tgrads;
   vector<mat> tdels;
+  vector<mat> d_tgrads;
+  vector<mat> saliencies;
+  vector<mat> checksals;
   vector< vector<mat> > activ;
   vector< vector<mat> > sums;
   vector< vector<mat> > grads;
   vector< vector<mat> > dels;
+  vector< vector<mat> > d_grads;
+  vector< vector<mat> > d_dels;
   vector<mat> checkgrads;
   vector<mat> checkdels;
   //vector<std::thread> bpthreads;
@@ -175,7 +183,7 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads0,init,5,6)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads1,load,1,4)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads2,test_file,1,5)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads3,train_net,1,3)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads4,test_net,0,2)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads4,test_net,0,1)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads5,l_load,0,3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads6,l_init,5,6)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads7,l_trainnet,1,3)
@@ -185,6 +193,7 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads10,train_rprop,0,3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads11,ls_init,4,5)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads12,ls_load,1,4)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads13,ld_trainrprop,1,4)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads14,d_trainrprop,0,3)
 
 
 
@@ -214,6 +223,7 @@ BOOST_PYTHON_MODULE(NNet)
     .def("ls_init",&NNet::ls_init,NNet_overloads11())
     .def("ls_load",&NNet::ls_load,NNet_overloads12())
     .def("ld_trainrprop",&NNet::ld_trainrprop,NNet_overloads13())
+    .def("d_trainrprop",&NNet::train_rprop,NNet_overloads14())
     ;
 }
 

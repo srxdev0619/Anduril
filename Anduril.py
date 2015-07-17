@@ -49,9 +49,17 @@ class Anduril():
             print "Invalid input, network not trained!"
             return
 
-    def test_net(self,mode = 0,verbose = 0):
-        if (type(mode) == int) and (type(verbose) == int):
-            self.Net.test_net(mode,verbose)
+    def d_trainrprop(self,mode = 0, verbose = 0, tmax = 15.0):
+        if (type(mode) == int) and (type(verbose) == int) and (type(tmax) == float):
+            self.Net.d_trainrprop(mode,verbose,tmax)
+            return
+        else:
+            print "Invalid input, network not trained!"
+            return
+
+    def test_net(self,verbose = 0):
+        if (type(verbose) == int):
+            self.Net.test_net(verbose)
             return
         else:
             print "Invalid input!"
