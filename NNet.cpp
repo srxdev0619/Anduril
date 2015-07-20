@@ -751,7 +751,7 @@ void NNet::train_net(double lrate, int mode, int verbose)
 	      ttemp_rmse = temp_rmse;
 	      if (loadmode == 1)
 		{
-		  testfile(loadfile,verbose);
+		  testfile(verbose);
 		}
 	      else 
 		{
@@ -947,7 +947,7 @@ void NNet::train_net(double lrate, int mode, int verbose)
 	      ttemp_rmse = temp_rmse;
 	      if (loadmode == 1)
 		{
-		  testfile(loadfile,verbose);
+		  testfile(verbose);
 		}
 	      else 
 		{
@@ -1433,7 +1433,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 	    {
 	      if (loadmode == 1)
 		{
-		  testfile(loadfile,verbose);
+		  testfile(verbose);
 		}
 	      else 
 		{
@@ -1537,7 +1537,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		{
 		  if (rprop == 0)
 		    {
-		      params[j] = params[j] - (0.0001/(double)train)*tgrads[j]; - 0.00001*params[j];
+		      params[j] = params[j] - (0.000001)*tgrads[j]; - 0.00001*params[j];
 		      bias[j] = bias[j] - (0.00001/(double)train)*tdels[j];
 		      rprop++;
 		      tgrads[j].fill(0);
@@ -1565,7 +1565,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 	    {
 	      if (loadmode == 1)
 		{
-		  testfile(loadfile,verbose);
+		  testfile(verbose);
 		}
 	      else 
 		{
@@ -1731,7 +1731,7 @@ void NNet::d_trainrprop(int mode, int verbose,double tmax)
 		{
 		  if (loadmode == 1)
 		    {
-		      testfile(loadfile,verbose);
+		      testfile(verbose);
 		    }
 		  else 
 		    {
@@ -1877,7 +1877,7 @@ void NNet::d_trainrprop(int mode, int verbose,double tmax)
 		{
 		  if (loadmode == 1)
 		    {
-		      testfile(loadfile,verbose);
+		      testfile(verbose);
 		    }
 		  else 
 		    {
@@ -2294,6 +2294,11 @@ void NNet::test_file(string filename, int verbose,string netname, string sep1, s
 	  feedforwardmode = -1;
 	}
     }
+  if (!testxdata.empty())
+    {
+      testxdata.clear();
+      testydata.clear();
+    }
   //parse file input
   while (getline(ldata,temp))
     {
@@ -2433,87 +2438,19 @@ void NNet::test_file(string filename, int verbose,string netname, string sep1, s
 
 
 
-void NNet::testfile(string filename,int verbose,int ffmode, string sep1, string sep2)
+void NNet::testfile(int verbose)
 {
   if (loadmode != 1)
     {
       cout<<"Please use test_net() to test this neural net!\n";
       return;
     }
-  ifstream ldata(filename);
-  if (!ldata.is_open())
-    {
-      cout<<"Error opening file!\n";
-      return;
-    }
-  string temp;
-  int numlines = 0;
-  string decp = ".";
-  string minussb = "-";
-  int feedforwardmode = ffmode;
-  //parse file input
-  while (getline(ldata,temp))
-    {
-      int lent = temp.length();
-      int track = 0;
-      string num = "";
-      int countx = 0;
-      int county = 0;
-      vector<double> yvals;
-      vector<double> xvals;
-      for(int i = 0; i < lent; i++)
-	{
-	  if  ((temp.at(i) != sep1.at(0)) && (temp.at(i) != sep2.at(0)) && (isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)))
-	    {
-	      cout << "Invalid file format!\n";
-	      return;
-	    }
-	  if (((temp.at(i) != sep1.at(0)) && (temp.at(i) != sep2.at(0)) && (i < (lent-1))) || (temp.at(i) == decp.at(0)) || (temp.at(i) == minussb.at(0)))
-	    {
-	      num = num + temp.at(i);
-	    }
-	  else if ((temp.at(i) == sep1.at(0)) && (track == 0))
-	    {
-	      xvals.push_back(stod(num,NULL));
-	      num = "";
-	      countx++;
-	    }
-	  else if (temp.at(i) == sep2.at(0))
-	    {
-	      track = 1;
-	      xvals.push_back(stod(num,NULL));
-	      num = "";
-	      countx++;
-	    }
-	  else if ((track == 1) && (temp.at(i) == sep1.at(0)))
-	    {
-	      yvals.push_back(stod(num,NULL));
-	      num = "";
-	      county++;
-	    }
-	  else if (i == (lent - 1))
-	    {
-	      num = num + temp.at(i);
-	      yvals.push_back(stod(num,NULL));
-	      num = "";
-	      county++;
-	    }
-	}
-      if ((pcountx != countx) || (pcounty != county))
-	{
-	  cout<<"Invalid file format, change in size of vectors!\n";
-	}
-      mat mtempx(xvals);
-      mat mtempy(yvals);
-      testxdata.push_back(mtempx);
-      testydata.push_back(mtempy);
-      numlines++;
-    }
+  int feedforwardmode = -1;
   int passed = 0;
   double error = 0;
-  for (int i = 0; i < numlines; i++)
+  for (int i = 0; i < train; i++)
     {
-      feed_forward(testxdata[i],feedforwardmode);
+      feed_forward(xdata[i],feedforwardmode);
       if (classreg == 0)
 	{
 	  int max = 0;
@@ -2543,7 +2480,7 @@ void NNet::testfile(string filename,int verbose,int ffmode, string sep1, string 
 		}
 	    }
 	  activ[0][idx](idx,0) = 1.0;
-	  if (abs(activ[0][alent](idx,0) - testydata[i](idx,0)) <= 0.1)
+	  if (abs(activ[0][alent](idx,0) - ydata[i](idx,0)) <= 0.1)
 	    {
 	      passed++;
 	    }
@@ -2554,8 +2491,8 @@ void NNet::testfile(string filename,int verbose,int ffmode, string sep1, string 
 	  int lent = activ[0][numhid + 1].n_rows;
 	  for (int j = 0; j < lent; j++)
 	    {
-	      error = error + pow(testydata[i](j,0) - activ[0][numhid + 1](j,0),2);
-	      if (abs(activ[0][numhid + 1](j,0) - testydata[i](j,0)) <= 0.1)
+	      error = error + pow(ydata[i](j,0) - activ[0][numhid + 1](j,0),2);
+	      if (abs(activ[0][numhid + 1](j,0) - ydata[i](j,0)) <= 0.1)
 		{
 		  continue;
 		}
@@ -2571,19 +2508,19 @@ void NNet::testfile(string filename,int verbose,int ffmode, string sep1, string 
 	    }
 	}
     }
-  double hitrate = ((double)passed/(double)numlines)*100;
+  double hitrate = ((double)passed/(double)train)*100;
   if ((verbose == 1) && (classreg == 0))
     {
       cout<<passed<<endl;
       cout<<"The accuracy is: "<<hitrate<<"%\n";
     }
-  double RMSE = sqrt((error/(double)numlines));
+  double RMSE = sqrt((error/(double)train));
   if(classreg == 1)
     {
       temp_rmse = RMSE;
       if (verbose == 1)
 	{
-	  double averror =  (sqrt(error)/(double)numlines);
+	  double averror =  (sqrt(error)/(double)train);
 	  cout<<"RMSE: "<<RMSE<<endl;
 	  cout<<"Average error: "<<averror<<endl;
 	}

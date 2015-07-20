@@ -72,7 +72,7 @@ class NNet
   void l_parallelbp(int index, int pos);
   void lsavenets(string netname,int index);
   void l_testall(int mode = 0);
-  void testfile(string filename,int verbose = 0,int ffmode = -1, string sep1 = ",", string sep2 = " ");
+  void testfile(int verbose = 0);
   void ld_backprop(mat x, mat y, int gpos);
   void OBD_init(void);
   void l_optimalBD(int pos);
