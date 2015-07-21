@@ -839,12 +839,12 @@ void NNet::train_net(double lrate, int mode, int verbose)
 	{
 	  if (verbose == 0)
 	    {
-	      cout<<setprecision(2);
+	      cout<<setprecision(5);
 	      cout<<"\r"<<((double)i/(double)epoch)*100<<"%"<<flush;
 	    }
 	  else
 	    {
-	      cout<<setprecision(2);
+	      cout<<setprecision(5);
 	      cout<<((double)i/(double)epoch)*100<<"%\n";
 	    }
 	  int step = 0;
@@ -1365,12 +1365,12 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 	{
 	  if (verbose == 0)
 	    {
-	      cout<<setprecision(2);
+	      cout<<setprecision(5);
 	      cout<<"\r"<<((double)k/(double)epoch)*100<<"%"<<flush;
 	    }
 	  else
 	    {
-	      cout<<setprecision(2);
+	      cout<<setprecision(5);
 	      cout<<((double)k/(double)epoch)*100<<"%"<<endl;
 	    }
 	  for (int i = 0; i < train; i = i + numcores)
@@ -1486,12 +1486,12 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 	{
 	  if (verbose == 0)
 	    {
-	      cout<<setprecision(2);
+	      cout<<setprecision(5);
 	      cout<<"\r"<<((double)i/(double)epoch)*100<<"%"<<flush;
 	    }
 	  else
 	    {
-	      cout<<setprecision(2);
+	      cout<<setprecision(5);
 	      cout<<((double)i/(double)epoch)*100<<"%"<<endl;
 	    }
 	  int step = 0;
@@ -1664,12 +1664,12 @@ void NNet::d_trainrprop(int mode, int verbose,double tmax)
 	    {
 	      if (verbose == 0)
 		{
-		  cout<<setprecision(2);
+		  cout<<setprecision(5);
 		  cout<<"\r"<<((double)k/(double)epoch)*100<<"%"<<flush; 
 		}
 	      else
 		{
-		  cout<<setprecision(2);
+		  cout<<setprecision(5);
 		  cout<<((double)k/(double)epoch)*100<<"%"<<endl;
 		}
 	      for (int i = 0; i < train; i = i + numcores)
@@ -1801,12 +1801,12 @@ void NNet::d_trainrprop(int mode, int verbose,double tmax)
 	    {
 	      if (verbose == 0)
 		{
-		  cout<<setprecision(2);
+		  cout<<setprecision(5);
 		  cout<<"\r"<<((double)i/(double)epoch)*100<<"%"<<flush; 
 		}
 	      else
 		{
-		  cout<<setprecision(2);
+		  cout<<setprecision(5);
 		  cout<<((double)i/(double)epoch)*100<<"%"<<endl;
 		}
 	      int step = 0;
@@ -3731,12 +3731,12 @@ void NNet::l_trainnet(int numlatent, int mode, double tol)
 	      if (trainmode == 0)
 		{
 		  double pc = ((double)k/(double)epoch)*100;
-		  cout<<setprecision(2);
+		  cout<<setprecision(5);
 		  cout<<"\r"<<pc<<"%"<<flush;
 		}
 	      else if (trainmode == 1)
 		{
-		  cout<<setprecision(2);
+		  cout<<setprecision(5);
 		  cout<<((double)k/(double)epoch)*100<<"%"<<endl;
 		  l_testall();
 		  cout<<endl;
@@ -3907,12 +3907,12 @@ void NNet::l_trainnet(int numlatent, int mode, double tol)
 	      if (trainmode == 0)
 		{
 		  double pc = ((double)i/(double)epoch)*100;
-		  cout<<setprecision(2);
+		  cout<<setprecision(5);
 		  cout<<"\r"<<pc<<"%"<<flush;
 		}
 	      else if (trainmode == 1)
 		{
-		  cout<<setprecision(2);
+		  cout<<setprecision(5);
 		  cout<<((double)i/(double)epoch)*100<<"%"<<endl;
 		  l_testall();
 		  cout<<endl;
@@ -4946,12 +4946,12 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode, double tol)
 	      if (trainmode == 0)
 		{
 		  double pc = ((double)k/(double)epoch)*100;
-		  cout<<setprecision(2);
+		  cout<<setprecision(5);
 		  cout<<"\r"<<pc<<"%"<<flush;
 		}
 	      else if (trainmode == 1)
 		{
-		  cout<<setprecision(2);
+		  cout<<setprecision(5);
 		  cout<<((double)k/(double)epoch)*100<<"%"<<endl;
 		  l_testall();
 		  cout<<endl;
@@ -5209,12 +5209,12 @@ void NNet::l_trainrprop(int numlatent, double tmax, int mode, double tol)
 	      if (trainmode == 0)
 		{
 		  pc = ((double)i/(double)epoch)*100;
-		  cout<<setprecision(2);
+		  cout<<setprecision(5);
 		  cout<<"\r"<<pc<<"%"<<flush;
 		}
 	      else if (trainmode == 1)
 		{
-		  cout<<setprecision(2);
+		  cout<<setprecision(5);
 		  cout<<((double)i/(double)epoch)*100<<"%"<<endl;
 		  l_testall();
 		  cout<<endl;
@@ -6020,12 +6020,12 @@ void NNet::ld_trainrprop(int numlatent, double tmax, int mode, double tol)
 		  if (trainmode == 0)
 		    {
 		      double pc = ((double)k/(double)epoch)*100;
-		      cout<<setprecision(2);
+		      cout<<setprecision(5);
 		      cout<<"\r"<<pc<<"%"<<flush;
 		    }
 		  else if (trainmode == 1)
 		    {
-		      cout<<setprecision(2);
+		      cout<<setprecision(5);
 		      cout<<((double)k/(double)epoch)*100<<"%"<<endl;
 		      l_testall();
 		      cout<<endl;
@@ -6309,12 +6309,12 @@ void NNet::ld_trainrprop(int numlatent, double tmax, int mode, double tol)
 		  if (trainmode == 0)
 		    {
 		      pc = ((double)i/(double)epoch)*100;
-		      cout<<setprecision(2);
+		      cout<<setprecision(5);
 		      cout<<"\r"<<pc<<"%"<<flush;
 		    }
 		  else if (trainmode == 1)
 		    {
-		      cout<<setprecision(2);
+		      cout<<setprecision(5);
 		      cout<<((double)i/(double)epoch)*100<<"%"<<endl;
 		      l_testall();
 		      cout<<endl;
