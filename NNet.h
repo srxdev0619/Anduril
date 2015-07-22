@@ -156,6 +156,9 @@ class NNet
   double softplus(double x);
   double rec_D(double x);
   double softplus_D(double x);
+  double tanh_dd(double x);
+  double sigmoid_dd(double x);
+  double sigmoid_d(double x);
   //Stores files
  
   int loadmode;
