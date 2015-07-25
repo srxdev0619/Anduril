@@ -5798,7 +5798,7 @@ void NNet::ls_optimalBD(void)
   vector<double> l_mins;
   for (int i = 0; i < l_train; i++)
     {
-      ls_saliencies.push_back((1.0/(double)numfiles)*ld_tdels[i]);
+      ls_saliencies.push_back((0.5/(double)numfiles)*ld_tdels[i]%(l_xvals[i]%l_xvals[i]));
       l_mins.push_back(1000.0);
     }
   for (int i = 0; i < l_train; i++)
@@ -5823,7 +5823,7 @@ void NNet::ls_optimalBD(void)
 	{
 	  if (j < l_numlatent)
 	    {
-	      if (abs(ls_saliencies[i](j,0) - l_xvals[i](j,0)) < s_tol[i])
+	      if (abs(ls_saliencies[i](j,0) - l_mins[i]) < s_tol[i])
 		{
 		  ls_saliencies[i](j,0) = 0.0;
 		}
