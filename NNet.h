@@ -20,7 +20,7 @@ class NNet
   void func_arch(string flayer);
   //Load data
   void load(string filename,int imode = 0, string sep1 = ",", string sep2 = " ");
-  void test_file(string filename,int verbose = 0,string netname = " ",string sep1 = ",", string sep2 = " ");
+  void test_file(string filename,string netname = " ",string sep1 = ",", string sep2 = " ");
   //Train the Nerual Network
   void train_net(double lrate,int mode = 0, int verbose = 0);
   void train_rprop(int mode = 0,int verbose = 0, double tmax = 15.0);
@@ -184,7 +184,7 @@ class NNet
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads0,init,5,6)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads1,load,1,4)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads2,test_file,1,5)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads2,test_file,1,4)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads3,train_net,1,3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads4,test_net,0,1)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads5,l_load,0,3)

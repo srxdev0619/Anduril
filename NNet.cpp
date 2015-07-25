@@ -395,7 +395,7 @@ void NNet::feed_forward(mat x,int gpos)
       idx = 0;
       if (!activ[idx].empty())
 	activ[idx].clear();
-      if (!sums.empty())
+      if (!sums[idx].empty())
 	sums[idx].clear();
       activ[idx].push_back(x);
       sums[idx].push_back(x);
@@ -440,7 +440,7 @@ void NNet::feed_forward(mat x,int gpos)
     }
   if (!activ[idx].empty())
     activ[idx].clear();
-  if (!sums.empty())
+  if (!sums[idx].empty())
     sums[idx].clear();
   activ[idx].push_back(x);
   sums[idx].push_back(x);
@@ -2362,7 +2362,7 @@ void NNet::snets(void)
 
 
 //This method is to test data of a specific file
-void NNet::test_file(string filename, int verbose,string netname, string sep1, string sep2)
+void NNet::test_file(string filename, string netname, string sep1, string sep2)
 {
   ifstream ldata(filename);
   if (!ldata.is_open())
@@ -2376,6 +2376,7 @@ void NNet::test_file(string filename, int verbose,string netname, string sep1, s
   string minussb = "-";
   int feedforwardmode;
   string empt = " ";
+  int verbose = 1;
   if (netname != empt)
     {
       loadnet(netname);
@@ -4202,7 +4203,7 @@ void NNet::l_savenet(void)
 	{
 	  for(int j = 0; j < l_numx; j++)
 	    {
-	      saveinput<<l_xvals[i](j,0);
+	      saveinput<<fixed<<l_xvals[i](j,0);
 	      if (j < l_numx - 1)
 		{
 		  saveinput<<",";
@@ -4315,6 +4316,17 @@ void NNet::test_data(string in_filename, string out_filename, string netname, st
   int county = 0;
   int ytemp = 0;
   //parse file input
+  if (!testxdata.empty())
+    {
+      testxdata.clear();
+      testydata.clear();
+    }
+  if (activ.empty())
+     {
+       vector<mat> tr;
+       activ.push_back(tr);
+       sums.push_back(tr);
+     }
   while (getline(ldata,temp))
     {
       int lent = temp.length();
@@ -4412,7 +4424,7 @@ void NNet::test_data(string in_filename, string out_filename, string netname, st
   double error = 0;
   for(int i = 0; i < xnumlines; i++)
     {
-      feed_forward(xdata[i],-1);
+      feed_forward(testxdata[i],-1);
       if (classreg == 1)
 	{
 	  int lent = activ[0][numhid + 1].n_rows;
@@ -4422,9 +4434,11 @@ void NNet::test_data(string in_filename, string out_filename, string netname, st
 	    }
 	}
     }
-  error = sqrt(error/(double)xnumlines);
+  double rmse = sqrt(error/(double)xnumlines);
+  error = sqrt(error)/(double)xnumlines;
   cout<<setprecision(5);
-  cout<<"RMSE :"<<error<<endl;
+  cout<<"Average error: "<<error<<endl;
+  cout<<"RMSE :"<<rmse<<endl;
   return;
 }
 
