@@ -5841,7 +5841,7 @@ void NNet::ls_optimalBD(void)
 }
 
 
-
+//With optimal brain damage
 void NNet::ld_trainrprop(int numlatent, double tmax, int mode, double tol)
 {
   if (l_yvals.empty())
