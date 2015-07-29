@@ -2531,7 +2531,6 @@ void NNet::test_file(string filename, string netname, string sep1, string sep2)
   else
     {
       double hitrate = ((double)passed/(double)numlines)*100;
-      //temp_rmse = hitrate;
       if (verbose == 1)
 	{
 	  cout<<passed<<endl;
