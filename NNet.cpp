@@ -1094,6 +1094,7 @@ void NNet::train_net(double lrate, int mode, int verbose)
 	}
     }
   cout<<endl;
+  trained = 1;
   return;
 }
 
@@ -1697,6 +1698,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 	}
     }
   cout<<endl;
+  trained = 1;
   return;
 }
 
@@ -2014,6 +2016,7 @@ void NNet::d_trainrprop(int mode, int verbose,double tmax)
 	}
     }
   cout<<endl;
+  trained = 1;
   return;
 }
 
@@ -2028,6 +2031,15 @@ void NNet::test_net(int verbose)
       cout<<"Please use test_file(filename) to test this net!\n";
       return;
     }
+  int ffmode = 0;
+  if ((trained == 1) && (trainmode == 1))
+    {
+      ffmode = -2;
+    }
+  else
+    {
+      ffmode = -1;
+    }
   int start;
   int stop;
   start = train;
@@ -2036,7 +2048,7 @@ void NNet::test_net(int verbose)
   double error = 0;
   for (int i = start; i < stop; i++)
     {
-      feed_forward(xdata[i],-1);
+      feed_forward(xdata[i],ffmode);
       if (classreg == 0)
 	{
 	  int max = 0;
@@ -5686,7 +5698,6 @@ void NNet::l_optimalBD(int pos)
       ld_tgrads[pos].push_back(zeros<mat>(rows,cols));
     }
   int l_count = 0;
-  double factc;
   for (int i = 0; i < l_train; i++)
     {
       if (qmat == 1)
@@ -5721,7 +5732,6 @@ void NNet::l_optimalBD(int pos)
 	    }
 	}
     }
-  factc = 1.0/(double)l_count;
   if (!l_saliencies[pos].empty())
     {
       l_checksals[pos] = l_saliencies[pos];
@@ -5729,7 +5739,7 @@ void NNet::l_optimalBD(int pos)
     }
   for(int i = 0; i < l_numhid + 1; i++)
     {
-      l_saliencies[pos].push_back(factc*0.5*((l_params[pos][i]%l_params[pos][i])%ld_tgrads[pos][i]));
+      l_saliencies[pos].push_back(0.5*((l_params[pos][i]%l_params[pos][i])%ld_tgrads[pos][i]));
     }
   double min_s = 1000.0 + l_saliencies[0][0](0,0);
   for(int i = 0; i < l_numhid + 1; i++)
