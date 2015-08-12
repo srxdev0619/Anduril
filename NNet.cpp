@@ -38,6 +38,7 @@ NNet::NNet()
   qmat = 0;
   trained = 0;
   l_trained = 0;
+  tmode = 0;
 }
 
 
@@ -745,6 +746,7 @@ void NNet::train_net(double lrate, int mode, int verbose)
       return;
     }
   int trainmode = mode;
+  tmode = trainmode;
   vector<thread> bpthreads;
   if ((trainmode != 0) && (trainmode != 1))
     {
@@ -1435,6 +1437,7 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
       checkdels.clear();
     }
   int trainmode = mode;
+  tmode = trainmode;
   vector<thread> bpthreads;
   double rmax = tmax;
   if ((trainmode != 0) && (trainmode != 1))
@@ -1718,6 +1721,7 @@ void NNet::d_trainrprop(int mode, int verbose,double tmax)
       checkdels.clear();
     }
   int trainmode = mode;
+  tmode = trainmode;
   vector<thread> bpthreads;
   double rmax = tmax;
   vector<mat> tr;
@@ -2032,7 +2036,7 @@ void NNet::test_net(int verbose)
       return;
     }
   int ffmode = 0;
-  if ((trained == 1) && (trainmode == 1))
+  if ((trained == 1) && (tmode == 1))
     {
       ffmode = -2;
     }
