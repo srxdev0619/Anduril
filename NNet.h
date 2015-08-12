@@ -46,6 +46,7 @@ class NNet
   void testvoids(int mode);
   void l_funcarch(void);
  private:
+  int tmode;
   //Variables
   // stores the architecture of hidden layers in a array
   int trained;
