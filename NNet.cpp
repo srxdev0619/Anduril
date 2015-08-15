@@ -738,7 +738,7 @@ void NNet::d_backprop(mat x, mat y, int gpos)
 
 
 //Train the neural network
-void NNet::train_net(double lrate, int mode, int verbose)
+void NNet::train_net(double lrate, int mode, int verbose, string logfile)
 {
   if (ydata.empty())
     {
@@ -747,6 +747,21 @@ void NNet::train_net(double lrate, int mode, int verbose)
     }
   int trainmode = mode;
   tmode = trainmode;
+  string empt = " ";
+  ofstream loggerf;
+  ofstream logf;
+  if ((logfile[0] != empt[0]) && (trainmode == 1))
+    {
+      to_log = 1;
+      f_log = logfile + ".and";
+      f_logger = logfile + "_log.dat";
+      loggerf.open(f_logger);
+      if (!loggerf.is_open())
+	{
+	  cout<<"Failed to open file!"<<endl;
+	  return;
+	}
+    }
   vector<thread> bpthreads;
   if ((trainmode != 0) && (trainmode != 1))
     {
@@ -773,8 +788,25 @@ void NNet::train_net(double lrate, int mode, int verbose)
 	    }
 	  else
 	    {
-	      cout<<setprecision(5);
-	      cout<<((double)k/(double)epoch)*100<<"%\n";
+	      if (to_log == 0)
+		{
+		  cout<<setprecision(5);
+		  cout<<((double)k/(double)epoch)*100<<"%"<<endl;
+		}
+	      else
+		{
+		  logf.open(f_log, ios::app);
+		  if (!logf.is_open())
+		    {
+		      cout<<"Failed to open log file !"<<endl;
+		      return;
+		    }
+		  cout<<setprecision(2)<<fixed;
+		  cout<<"\r"<<((double)k/(double)epoch)*100<<"%"<<flush;
+		  logf<<"Epoch No: "<<k<<endl;
+		  logf.close();
+		  loggerf<<k<<" ";
+		}
 	    }
 	  for (int i = 0; i < train; i = i + numcores)
 	    {
@@ -841,6 +873,10 @@ void NNet::train_net(double lrate, int mode, int verbose)
 		{
 		  min_rmse = temp_rmse;
 		}
+	      if (to_log == 1)
+		{
+		  loggerf<<temp_rmse<<"\n";
+		}
 	      if (temp_rmse > ttemp_rmse)
 		{
 		  if (ecount <= 0)
@@ -893,7 +929,6 @@ void NNet::train_net(double lrate, int mode, int verbose)
 		      best_velocity.push_back(velocity.at(r));
 		    }
 		}
-	      cout<<endl;
 	    }
 	}
     }
@@ -921,8 +956,25 @@ void NNet::train_net(double lrate, int mode, int verbose)
 	    }
 	  else
 	    {
-	      cout<<setprecision(5);
-	      cout<<((double)i/(double)epoch)*100<<"%\n";
+	      if (to_log == 0)
+		{
+		  cout<<setprecision(5);
+		  cout<<((double)i/(double)epoch)*100<<"%"<<endl;
+		}
+	      else
+		{
+		  logf.open(f_log, ios::app);
+		  if (!logf.is_open())
+		    {
+		      cout<<"Failed to open log file !"<<endl;
+		      return;
+		    }
+		  cout<<setprecision(2)<<fixed;
+		  cout<<"\r"<<((double)i/(double)epoch)*100<<"%"<<flush;
+		  logf<<"Epoch No: "<<i<<endl;
+		  logf.close();
+		  loggerf<<i<<" ";
+		}
 	    }
 	  int step = 0;
 	  int cthreads = 0;
@@ -1039,6 +1091,10 @@ void NNet::train_net(double lrate, int mode, int verbose)
 		{
 		  min_rmse = temp_rmse;
 		}
+	      if (to_log == 1)
+		{
+		  loggerf<<temp_rmse<<"\n";
+		}
 	      if (temp_rmse > ttemp_rmse)
 		{
 		  if (ecount <= 0)
@@ -1091,12 +1147,15 @@ void NNet::train_net(double lrate, int mode, int verbose)
 		      best_velocity.push_back(velocity.at(r));
 		    }
 		}
-	      cout<<endl;
 	    }
 	}
     }
   cout<<endl;
   trained = 1;
+  if (to_log == 1)
+    {
+      loggerf.close();
+    }
   return;
 }
 
@@ -1424,7 +1483,7 @@ void NNet::optimalBD(void)
 
 
 //Trains the network accroding to RPROP
-void NNet::train_rprop(int mode,int verbose,double tmax)
+void NNet::train_rprop(int mode,int verbose, string logfile, double tmax)
 {
   if (ydata.empty())
     {
@@ -1438,6 +1497,21 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
     }
   int trainmode = mode;
   tmode = trainmode;
+  string empt = " ";
+  ofstream loggerf;
+  ofstream logf;
+  if ((logfile[0] != empt[0]) && (trainmode == 1))
+    {
+      to_log = 1;
+      f_log = logfile + ".and";
+      f_logger = logfile + "_log.dat";
+      loggerf.open(f_logger);
+      if (!loggerf.is_open())
+	{
+	  cout<<"Failed to open file!"<<endl;
+	  return;
+	}
+    }
   vector<thread> bpthreads;
   double rmax = tmax;
   if ((trainmode != 0) && (trainmode != 1))
@@ -1463,8 +1537,25 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 	    }
 	  else
 	    {
-	      cout<<setprecision(5);
-	      cout<<((double)k/(double)epoch)*100<<"%"<<endl;
+	      if (to_log == 0)
+		{
+		  cout<<setprecision(5);
+		  cout<<((double)k/(double)epoch)*100<<"%"<<endl;
+		}
+	      else
+		{
+		  logf.open(f_log, ios::app);
+		  if (!logf.is_open())
+		    {
+		      cout<<"Failed to open log file !"<<endl;
+		      return;
+		    }
+		  cout<<setprecision(2)<<fixed;
+		  cout<<"\r"<<((double)k/(double)epoch)*100<<"%"<<flush;
+		  logf<<"Epoch No: "<<k<<endl;
+		  logf.close();
+		  loggerf<<k<<" ";
+		}
 	    }
 	  for (int i = 0; i < train; i = i + numcores)
 	    {
@@ -1543,6 +1634,10 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		{
 		  min_rmse = temp_rmse;
 		}
+	      if (to_log == 1)
+		{
+		  loggerf<<temp_rmse<<"\n";
+		}
 	      if (temp_rmse < min_rmse)
 		{
 		  min_rmse = temp_rmse;
@@ -1562,7 +1657,6 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		      best_velocity.push_back(velocity.at(r));
 		    }
 		}
-	      cout<<endl;
 	    }
 	}
     }
@@ -1584,8 +1678,25 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 	    }
 	  else
 	    {
-	      cout<<setprecision(5);
-	      cout<<((double)i/(double)epoch)*100<<"%"<<endl;
+	     if (to_log == 0)
+	       {
+		 cout<<setprecision(5);
+		 cout<<((double)i/(double)epoch)*100<<"%"<<endl;
+	       }
+	     else
+	       {
+		 logf.open(f_log, ios::app);
+		 if (!logf.is_open())
+		   {
+		     cout<<"Failed to open log file !"<<endl;
+		     return;
+		   }
+		 cout<<setprecision(2)<<fixed;
+		 cout<<"\r"<<((double)i/(double)epoch)*100<<"%"<<flush;
+		 logf<<"Epoch No: "<<i<<endl;
+		 logf.close();
+		 loggerf<<i<<" ";
+	       }
 	    }
 	  int step = 0;
 	  int cthreads = 0;
@@ -1677,6 +1788,10 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		{
 		  min_rmse = temp_rmse;
 		}
+	      if (to_log == 1)
+		{
+		  loggerf<<temp_rmse<<"\n";
+		}
 	      if (temp_rmse < min_rmse)
 		{
 		  min_rmse = temp_rmse;
@@ -1696,19 +1811,22 @@ void NNet::train_rprop(int mode,int verbose,double tmax)
 		      best_velocity.push_back(velocity.at(r));
 		    }
 		}
-	      cout<<endl;
 	    }
 	}
     }
   cout<<endl;
   trained = 1;
+  if (to_log == 1)
+    {
+      loggerf.close();
+    }
   return;
 }
 
 
 
 //Trains the network accroding to RPROP
-void NNet::d_trainrprop(int mode, int verbose,double tmax)
+void NNet::d_trainrprop(int mode, int verbose, string logfile, double tmax)
 {
   if (ydata.empty())
     {
@@ -1722,6 +1840,21 @@ void NNet::d_trainrprop(int mode, int verbose,double tmax)
     }
   int trainmode = mode;
   tmode = trainmode;
+  string empt = " ";
+  ofstream loggerf;
+  ofstream logf;
+  if ((logfile[0] != empt[0]) && (trainmode == 1))
+    {
+      to_log = 1;
+      f_log = logfile + ".and";
+      f_logger = logfile + "_log.dat";
+      loggerf.open(f_logger);
+      if (!loggerf.is_open())
+	{
+	  cout<<"Failed to open file!"<<endl;
+	  return;
+	}
+    }
   vector<thread> bpthreads;
   double rmax = tmax;
   vector<mat> tr;
@@ -1764,8 +1897,25 @@ void NNet::d_trainrprop(int mode, int verbose,double tmax)
 		}
 	      else
 		{
-		  cout<<setprecision(5);
-		  cout<<((double)k/(double)epoch)*100<<"%"<<endl;
+		  if (to_log == 0)
+		    {
+		      cout<<setprecision(5);
+		      cout<<((double)k/(double)epoch)*100<<"%"<<endl;
+		    }
+		  else
+		    {
+		      logf.open(f_log,ios::app);
+		      if (!logf.is_open())
+			{
+			  cout<<"Failed to open log file !"<<endl;
+			  return;
+			}
+		      cout<<setprecision(2)<<fixed;
+		      cout<<"\r"<<((double)k/(double)epoch)*100<<"%"<<flush;
+		      logf<<"Epoch No: "<<k<<endl;
+		      logf.close();
+		      loggerf<<(k + obd*epoch)<<" ";
+		    }
 		}
 	      for (int i = 0; i < train; i = i + numcores)
 		{
@@ -1847,6 +1997,10 @@ void NNet::d_trainrprop(int mode, int verbose,double tmax)
 		    {
 		      min_rmse = temp_rmse;
 		    }
+		  if (to_log == 1)
+		    {
+		      loggerf<<temp_rmse<<"\n";
+		    }
 		  if (temp_rmse < min_rmse)
 		    {
 		      min_rmse = temp_rmse;
@@ -1865,7 +2019,6 @@ void NNet::d_trainrprop(int mode, int verbose,double tmax)
 			  best_velocity.push_back(velocity.at(r));
 			}
 		    }
-		  cout<<endl;
 		}
 	    }
 	  optimalBD();
@@ -1901,8 +2054,25 @@ void NNet::d_trainrprop(int mode, int verbose,double tmax)
 		}
 	      else
 		{
-		  cout<<setprecision(5);
-		  cout<<((double)i/(double)epoch)*100<<"%"<<endl;
+		  if (to_log == 0)
+		    {
+		      cout<<setprecision(5);
+		      cout<<((double)i/(double)epoch)*100<<"%"<<endl;
+		    }
+		  else
+		    {
+		      logf.open(f_log,ios::app);
+		      if (!logf.is_open())
+			{
+			  cout<<"Failed to open log file !"<<endl;
+			  return;
+			}
+		      cout<<setprecision(2)<<fixed;
+		      cout<<"\r"<<((double)i/(double)epoch)*100<<"%"<<flush;
+		      logf<<"Epoch No: "<<i<<endl;
+		      logf.close();
+		      loggerf<<(i + obd*epoch)<<" ";
+		    }
 		}
 	      int step = 0;
 	      while (step < train)
@@ -1995,6 +2165,10 @@ void NNet::d_trainrprop(int mode, int verbose,double tmax)
 		    {
 		      min_rmse = temp_rmse;
 		    }
+		  if (to_log == 1)
+		    {
+		      loggerf<<temp_rmse<<"\n";
+		    }
 		  if (temp_rmse < min_rmse)
 		    {
 		      min_rmse = temp_rmse;
@@ -2013,7 +2187,6 @@ void NNet::d_trainrprop(int mode, int verbose,double tmax)
 			  best_velocity.push_back(velocity.at(r));
 			}
 		    }
-		  cout<<endl;
 		}
 	    }
 	  optimalBD();
@@ -2021,6 +2194,10 @@ void NNet::d_trainrprop(int mode, int verbose,double tmax)
     }
   cout<<endl;
   trained = 1;
+  if (to_log == 1)
+    {
+      loggerf.close();
+    }
   return;
 }
 
@@ -2118,9 +2295,26 @@ void NNet::test_net(int verbose)
       temp_rmse = RMSE;
       if (verbose == 1)
 	{
-	  cout<<setprecision(5);
-	  cout<<"RMSE: "<<RMSE<<endl;
-	  cout<<"Average error: "<<averror<<endl;
+	  if (to_log == 0)
+	    {
+	      cout<<setprecision(5);
+	      cout<<"RMSE: "<<RMSE<<endl;
+	      cout<<"Average error: "<<averror<<endl<<endl;
+	    }
+	  else
+	    {
+	      ofstream logf;
+	      logf.open(f_log,ios::app);
+	      if (!logf.is_open())
+		{
+		  cout<<"Failed to open log file !"<<endl;
+		  return;
+		}
+	      logf<<setprecision(5);
+	      logf<<"RMSE: "<<RMSE<<endl;
+	      logf<<"Average error: "<<averror<<endl<<endl;
+	      logf.close();
+	    }
 	}
     }
   else
@@ -2128,9 +2322,26 @@ void NNet::test_net(int verbose)
       temp_rmse = hitrate;
       if (verbose == 1)
 	{
-	  cout<<"Passed: "<<passed<<endl;
-	  cout<<setprecision(5);
-	  cout<<"The accuracy is: "<<hitrate<<"%\n";
+	  if (to_log == 0)
+	    {
+	      cout<<setprecision(5);
+	      cout<<"Passed: "<<passed<<endl;
+	      cout<<"The accuracy is: "<<hitrate<<"%\n"<<endl<<endl;
+	    }
+	  else
+	    {
+	      ofstream logf;
+	      logf.open(f_log,ios::app);
+	      if (!logf.is_open())
+		{
+		  cout<<"Failed to open log file !"<<endl;
+		  return;
+		}
+	      logf<<setprecision(5);
+	      logf<<"Passed: "<<passed<<endl;
+	      logf<<"The accuracy is: "<<hitrate<<"%\n"<<endl;
+	      logf.close();
+	    }
 	}
     }
   return;
@@ -2632,9 +2843,26 @@ void NNet::testfile(int verbose)
   double hitrate = ((double)passed/(double)train)*100;
   if ((verbose == 1) && (classreg == 0))
     {
-      cout<<passed<<endl;
-      cout<<setprecision(5);
-      cout<<"The accuracy is: "<<hitrate<<"%\n";
+      if (to_log == 0)
+	{
+	  cout<<passed<<endl;
+	  cout<<setprecision(5);
+	  cout<<"The accuracy is: "<<hitrate<<"%\n"<<endl;
+	}
+      else 
+	{
+	  ofstream logf;
+	  logf.open(f_log,ios::app);
+	  if (!logf.is_open())
+	    {
+	      cout<<"Failed to open log file !"<<endl;
+	      return;
+	    }
+	  logf<<passed<<endl;
+	  logf<<setprecision(5);
+	  logf<<"The accuracy is: "<<hitrate<<"%\n"<<endl;
+	  logf.close();
+	}
     }
   double RMSE = sqrt((error/(double)train));
   if(classreg == 1)
@@ -2642,10 +2870,28 @@ void NNet::testfile(int verbose)
       temp_rmse = RMSE;
       if (verbose == 1)
 	{
-	  double averror =  (sqrt(error)/(double)train);
-	  cout<<setprecision(5);
-	  cout<<"RMSE: "<<RMSE<<endl;
-	  cout<<"Average error: "<<averror<<endl;
+	  if (to_log == 0)
+	    {
+	      double averror =  (sqrt(error)/(double)train);
+	      cout<<setprecision(5);
+	      cout<<"RMSE: "<<RMSE<<endl;
+	      cout<<"Average error: "<<averror<<endl<<endl;
+	    }
+	  else
+	    {
+	      ofstream logf;
+	      logf.open(f_log,ios::app);
+	      if (!logf.is_open())
+		{
+		  cout<<"Failed to open log file !"<<endl;
+		  return;
+		}
+	      double averror =  (sqrt(error)/(double)train);
+	      logf<<setprecision(5);
+	      logf<<"RMSE: "<<RMSE<<endl;
+	      logf<<"Average error: "<<averror<<endl<<endl;
+	      logf.close();
+	    }
 	}
     }
   else
