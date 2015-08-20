@@ -1155,6 +1155,7 @@ void NNet::train_net(double lrate, int mode, int verbose, string logfile)
   if (to_log == 1)
     {
       loggerf.close();
+      to_log = 0;
     }
   return;
 }
@@ -1819,6 +1820,7 @@ void NNet::train_rprop(int mode,int verbose, string logfile, double tmax)
   if (to_log == 1)
     {
       loggerf.close();
+      to_log = 0;
     }
   return;
 }
@@ -2197,6 +2199,7 @@ void NNet::d_trainrprop(int mode, int verbose, string logfile, double tmax)
   if (to_log == 1)
     {
       loggerf.close();
+      to_log = 0;
     }
   return;
 }
