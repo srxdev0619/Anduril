@@ -267,6 +267,7 @@ void NNet::load(string filename,int imode, string sep1, string sep2)
   int numlines = 0;
   string decp = ".";
   string minussb = "-";
+  string ex = "e";
   if (!xdata.empty())
     {
       xdata.clear();
@@ -284,7 +285,7 @@ void NNet::load(string filename,int imode, string sep1, string sep2)
       vector<double> xvals;
       for(int i = 0; i < lent; i++)
 	{
-	  if  ((temp.at(i) != sep1.at(0)) && (temp.at(i) != sep2.at(0)) && (isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)))
+	  if  ((temp.at(i) != ex.at(0)) && (temp.at(i) != sep1.at(0)) && (temp.at(i) != sep2.at(0)) && (isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)))
 	    {
 	      cout<<temp.at(i)<<endl;
 	      cout << "Invalid file format!\n";
@@ -2302,7 +2303,7 @@ void NNet::test_net(int verbose)
 	    {
 	      cout<<setprecision(5);
 	      cout<<"RMSE: "<<RMSE<<endl;
-	      cout<<"Average error: "<<averror<<endl<<endl;
+	      cout<<"Average error: "<<averror<<endl;
 	    }
 	  else
 	    {
@@ -2329,7 +2330,7 @@ void NNet::test_net(int verbose)
 	    {
 	      cout<<setprecision(5);
 	      cout<<"Passed: "<<passed<<endl;
-	      cout<<"The accuracy is: "<<hitrate<<"%\n"<<endl<<endl;
+	      cout<<"The accuracy is: "<<hitrate<<"%\n"<<endl;
 	    }
 	  else
 	    {
