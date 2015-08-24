@@ -39,6 +39,7 @@ NNet::NNet()
   trained = 0;
   l_trained = 0;
   tmode = 0;
+  to_log = 0;
 }
 
 
