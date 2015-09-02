@@ -2609,6 +2609,7 @@ void NNet::test_file(string filename, string netname, string sep1, string sep2)
   int feedforwardmode;
   string empt = " ";
   int verbose = 1;
+  string ex = "e";
   if (netname != empt)
     {
       loadnet(netname);
@@ -2648,7 +2649,7 @@ void NNet::test_file(string filename, string netname, string sep1, string sep2)
       vector<double> xvals;
       for(int i = 0; i < lent; i++)
 	{
-	  if  ((temp.at(i) != sep1.at(0)) && (temp.at(i) != sep2.at(0)) && (isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)))
+	  if  ((temp.at(i) != ex.at(0)) && (temp.at(i) != sep1.at(0)) && (temp.at(i) != sep2.at(0)) && (isdigit(temp.at(i)) == 0) && (temp.at(i) != decp.at(0)) && (temp.at(i) != minussb.at(0)))
 	    {
 	      cout << "Invalid file format!\n";
 	      return;
