@@ -1350,7 +1350,7 @@ void NNet::rms_prop(int r_prop)
 	    {
 	      for(int cl = 0; cl < cols; cl++)
 		    {
-		      checkgrads[q](rw,cl) = sqrt(checkgrads[q](rw,cl)) + 0.0000001;
+		      checkgrads[q](rw,cl) = sqrt(checkgrads[q](rw,cl));
 		    }
 		}
 	  int brows = checkdels[q].n_rows;
@@ -1359,7 +1359,7 @@ void NNet::rms_prop(int r_prop)
 	    {
 	      for(int cl = 0; cl < bcols; cl++)
 		{
-		  checkdels[q](rw,cl) = sqrt(checkdels[q](rw,cl)) + 0.0000001;
+		  checkdels[q](rw,cl) = sqrt(checkdels[q](rw,cl));
 		}
 	    }
 	}
@@ -4973,7 +4973,7 @@ void NNet::l_rmsprop(int r_prop)
 		{
 		  for(int cl = 0; cl < cols; cl++)
 		    {
-		      l_checkgrads[fl][q](rw,cl) = sqrt(l_checkgrads[fl][q](rw,cl)) + 0.0000001;
+		      l_checkgrads[fl][q](rw,cl) = sqrt(l_checkgrads[fl][q](rw,cl));
 		    }
 		}
 	      int brows = l_checkdels[fl][q].n_rows;
@@ -4982,7 +4982,7 @@ void NNet::l_rmsprop(int r_prop)
 		{
 		  for(int cl = 0; cl < bcols; cl++)
 		    {
-		      l_checkdels[fl][q](rw,cl) = sqrt(l_checkdels[fl][q](rw,cl)) + 0.0000001;
+		      l_checkdels[fl][q](rw,cl) = sqrt(l_checkdels[fl][q](rw,cl));
 		    }
 		}
 	    }
