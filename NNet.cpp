@@ -212,6 +212,11 @@ void NNet::init(string sconfig, int iclassreg, int inumcores, int igradd, int ic
 //Defines the activation function of each layer
 void NNet::func_arch(string flayer)
 {
+  if (checkinit == -1)
+    {
+      cout<<"Please initilize the Neural Network!\n";
+      return;
+    }
   int lent = flayer.length();
   if (lent != (numhid+1))
     {
@@ -331,6 +336,7 @@ void NNet::load(string filename,int imode, string sep1, string sep2)
       else if ((pcountx != countx) || (pcounty != county))
 	{
 	  cout<<"Invalid file format, change in size of vectors!\n";
+	  return;
 	}
       mat mtempx(xvals);
       mat mtempy(yvals);
