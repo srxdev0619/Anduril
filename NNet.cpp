@@ -33,6 +33,7 @@ NNet::NNet()
   pcountx = -1;
   pcounty = -1;
   checkinit = -1;
+  isloaded = -1;
   temp_rmse = 10000;
   min_rmse = -1;
   qmat = 0;
@@ -124,7 +125,7 @@ double NNet::softplus_D(double x)
 
 
 //Initilization method, sets up the type and architecture of neural network to be used
-void NNet::init(string sconfig, int iclassreg, int inumcores, int igradd, int icostfunc, int iepoch)
+void NNet::init(string sconfig, int iclassreg, int inumcores, int igradd, int icostfunc)
 {
   int count = 0;
   int lent = sconfig.length();
@@ -163,16 +164,10 @@ void NNet::init(string sconfig, int iclassreg, int inumcores, int igradd, int ic
   numcores = inumcores;
   gradd = igradd;
   costfunc = icostfunc;
-  epoch = iepoch;
   //checks network confgiuration
   if ((classreg > 1) || (gradd > 1) || (costfunc > 1) || (classreg < 0) || (gradd < 0))
     {
       cout<<"Invalid network configuration!\n";
-      return;
-    }
-  if (epoch <= 0)
-    {
-      cout<<"Invalid configuration\nPlease choose the number of epochs to be trained";
       return;
     }
   if (!funclayer.empty())
@@ -391,6 +386,7 @@ void NNet::load(string filename,int imode, string sep1, string sep2)
       tdels.push_back(b);
     }
   ldata.close();
+  isloaded = 0;
   return;
 }
 
@@ -746,8 +742,14 @@ void NNet::d_backprop(mat x, mat y, int gpos)
 
 
 //Train the neural network
-void NNet::train_net(double lrate, int mode, int verbose, string logfile)
+void NNet::train_net(int iepoch, double lrate, int mode, int verbose, string logfile)
 {
+  epoch = iepoch;
+  if (epoch <= 0)
+    {
+      cout<<"Invalid configuration\nPlease choose the number of epochs to be trained";
+      return;
+    }
   if (ydata.empty())
     {
       cout<<"Please load files into the network!"<<endl;
@@ -942,7 +944,6 @@ void NNet::train_net(double lrate, int mode, int verbose, string logfile)
     }
   else if (gradd == 1)
     {
-      cout<<"Initializing Stochastic Gradient Descent\n";
       //min_rmse = -1;
       vector<int> idxs;
       for (int i = 0; i < train; i++)
@@ -1492,8 +1493,14 @@ void NNet::optimalBD(void)
 
 
 //Trains the network accroding to RPROP
-void NNet::train_rprop(int mode,int verbose, string logfile, double tmax)
+void NNet::train_rprop(int iepoch,int mode,int verbose, string logfile, double tmax)
 {
+   epoch = iepoch;
+   if (epoch <= 0)
+    {
+      cout<<"Invalid configuration\nPlease choose the number of epochs to be trained";
+      return;
+    }
   if (ydata.empty())
     {
       cout<<"Please load files into the network!"<<endl;
@@ -1671,7 +1678,6 @@ void NNet::train_rprop(int mode,int verbose, string logfile, double tmax)
     }
   else if (gradd == 1)
     {
-      cout<<"Initializing Stochastic Gradient Descent\n";
       vector<int> idxs;
       for (int i = 0; i < train; i++)
 	{
@@ -1836,8 +1842,14 @@ void NNet::train_rprop(int mode,int verbose, string logfile, double tmax)
 
 
 //Trains the network accroding to RPROP
-void NNet::d_trainrprop(int mode, int verbose, string logfile, double tmax)
+void NNet::d_trainrprop(int iepoch, int mode, int verbose, string logfile, double tmax)
 {
+  epoch = iepoch;
+  if (epoch <= 0)
+    {
+      cout<<"Invalid configuration\nPlease choose the number of epochs to be trained";
+      return;
+    }
   if (ydata.empty())
     {
       cout<<"Please load files into the network!"<<endl;
@@ -2036,7 +2048,6 @@ void NNet::d_trainrprop(int mode, int verbose, string logfile, double tmax)
     }
   else if (gradd == 1)
     {
-      cout<<"Initializing Stochastic Gradient Descent\n";
       vector<int> idxs;
       int cthreads = 0;
       for (int i = 0; i < train; i++)
@@ -2780,6 +2791,56 @@ void NNet::test_file(string filename, string netname, string sep1, string sep2)
 }
 
 
+void NNet::error_stats(void)
+{
+  if (classreg != 1)
+    {
+      cout<<"This method is meant to be used only for regression";
+      return;
+    }
+  if ((isloaded == 0) && (checkinit == 0))
+    {
+      int tr_mode = 0;
+      if (tmode == 0)
+	{
+	  tr_mode = -1;
+	}
+      else if (tmode == 1)
+	{
+	  tr_mode = -2;
+	}
+      fstream train_file;
+      fstream test_file;
+      train_file.open(".train", fstream::out);
+      test_file.open(".test", fstream::out);
+      int start;
+      int stop;
+      start = 0;
+      stop = train;
+      for (int i = start; i < stop; i++)
+	{
+	  feed_forward(xdata[i],tr_mode);
+	  int lent = activ[0][numhid + 1].n_rows;
+	  if (lent > 1)
+	    {
+	      return;
+	    }
+	  double error = ydata[i](0,0) - activ[0][numhid + 1](0,0);
+	  train_file<<error<<"\n";
+	}
+      start = train;
+      stop = numdata;
+      for (int i = start; i < stop; i++)
+	{
+	  feed_forward(xdata[i],tr_mode);
+	  double error = ydata[i](0,0) - activ[0][numhid + 1](0,0);
+	  test_file<<error<<"\n";
+	}
+      train_file.close();
+      test_file.close();
+    }
+  return;
+}
 
 
 void NNet::testfile(int verbose)

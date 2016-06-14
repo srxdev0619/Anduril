@@ -15,17 +15,18 @@ class NNet
   //Constructor
   NNet();
   //To change the default configuration of the neural Network
-  void init(string sconfig, int iclassreg, int inumcores, int igradd, int icostfunc, int iepoch = -1);
+  void init(string sconfig, int iclassreg, int inumcores, int igradd, int icostfunc);
   //Stores the activation function of each layer
   void func_arch(string flayer);
   //Load data
   void load(string filename,int imode = 0, string sep1 = ",", string sep2 = " ");
   void test_file(string filename,string netname = " ",string sep1 = ",", string sep2 = " ");
   //Train the Nerual Network
-  void train_net(double lrate,int mode = 0, int verbose = 0, string logfile = " ");
-  void train_rprop(int mode = 1,int verbose = 1, string logfile = " ", double tmax = 1.0);
-  void d_trainrprop(int mode = 1,int verbose = 1, string logfile = " ", double tmax = 1.0);
+  void train_net(int iepoch, double lrate,int mode = 0, int verbose = 0, string logfile = " ");
+  void train_rprop(int iepoch, int mode = 1,int verbose = 1, string logfile = " ", double tmax = 1.0);
+  void d_trainrprop(int iepoch, int mode = 1,int verbose = 1, string logfile = " ", double tmax = 1.0);
   void test_net(int verbose = 0);
+  void error_stats(void);
   //Save the current weights and biases
   void savenet(string netname);
   //Load saved net
@@ -146,6 +147,8 @@ class NNet
   int pcounty;
   //checks wether init has been called or not
   int checkinit;
+  //checks whether a file has been loaded or not
+  int isloaded;
   //stores the entire configuration of the neural network
   vector<int> numlayers;
   //stores the activation function of each layer
@@ -186,21 +189,21 @@ class NNet
 
 
 
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads0,init,5,6)
+
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads1,load,1,4)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads2,test_file,1,4)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads3,train_net,1,4)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads3,train_net,2,5)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads4,test_net,0,1)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads5,l_load,0,3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads6,l_init,5,6)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads7,l_trainnet,1,3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads8,test_data,3,4)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads9,l_trainrprop,1,4)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads10,train_rprop,0,4)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads10,train_rprop,1,5)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads11,ls_init,4,5)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads12,ls_load,1,4)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads13,ld_trainrprop,1,4)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads14,d_trainrprop,0,4)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(NNet_overloads14,d_trainrprop,1,5)
 
 
 
@@ -208,7 +211,7 @@ BOOST_PYTHON_MODULE(NNet)
 {
   using namespace boost::python;
   class_<NNet>("NNet")
-    .def("init",&NNet::init,NNet_overloads0())
+    .def("init",&NNet::init)
     .def("func_arch",&NNet::func_arch)
     .def("load",&NNet::load,NNet_overloads1())
     .def("test_file",&NNet::test_file,NNet_overloads2())
@@ -231,6 +234,7 @@ BOOST_PYTHON_MODULE(NNet)
     .def("ls_load",&NNet::ls_load,NNet_overloads12())
     .def("ld_trainrprop",&NNet::ld_trainrprop,NNet_overloads13())
     .def("d_trainrprop",&NNet::train_rprop,NNet_overloads14())
+    .def("error_stats", &NNet::error_stats)
     ;
 }
 
