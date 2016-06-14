@@ -70,7 +70,7 @@ class Anduril():
         plt.show()
         return
 
-    def train_net(self,epoch,lrate, mode = 1, verbose = 1, logfile = " "):
+    def train_net(self,epoch,lrate, mode = 1, verbose = 0, logfile = " "):
         if (type(epoch) == int) and (type(lrate) == float) and (type(mode) == int) and (type(verbose) == int) and (type(logfile) == str):
             if (mode < 0) or (mode > 1):
                 print "The mode must be either 0 or 1"
